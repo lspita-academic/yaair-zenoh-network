@@ -5,7 +5,7 @@ use embassy_time::Timer;
 use esp_idf_svc::log::EspLogger;
 use esp_idf_svc::wifi::{AsyncWifi, EspWifi};
 use static_cell::StaticCell;
-use ping_pong::wifi;
+use platform::wifi;
 use zenoh_pico::{
     config::{ZenohConfigBuilder, ZenohConfigMode},
     session::ZenohSession,
