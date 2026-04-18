@@ -3,16 +3,15 @@ use std::time::Duration;
 use embassy_executor::{Spawner, SpawnerTraceExt};
 use embassy_time::Timer;
 use esp_idf_svc::log::EspLogger;
-use esp_idf_svc::wifi::{AsyncWifi, EspWifi};
+use platform::wifi::{Wifi, WifiConnection, config::WifiConfig};
 use static_cell::StaticCell;
-use platform::wifi;
 use zenoh_pico::{
     config::{ZenohConfigBuilder, ZenohConfigMode},
     session::ZenohSession,
 };
 
 static ZENOH_SESSION: StaticCell<ZenohSession> = StaticCell::new();
-static WIFI: StaticCell<AsyncWifi<EspWifi<'static>>> = StaticCell::new();
+static WIFI: StaticCell<WifiConnection<'static>> = StaticCell::new();
 
 #[embassy_executor::task]
 async fn pong(zenoh_session: &'static ZenohSession) {
@@ -38,14 +37,19 @@ async fn main(spawner: Spawner) {
     esp_idf_svc::sys::link_patches();
     EspLogger::initialize_default();
 
-    let mut wifi = WIFI.init(wifi::get_wifi().expect("Unable to initialize wifi"));
-    wifi::connect_wifi(&mut wifi)
-        .await
-        .unwrap_or_else(|err| panic!("Wifi connection raised error: {:?}", err));
+    let wifi_config =
+        WifiConfig::try_from_comptime_env().expect("Unable to initialize wifi config");
+    let wifi = WIFI.init(
+        Wifi::new()
+            .expect("Unable to initialize wifi")
+            .connect_with_config(&wifi_config)
+            .await
+            .expect("Unable to connect to wifi"),
+    );
 
-    let net_if = wifi.wifi().sta_netif();
-    let if_name = net_if.get_name();
-    let ip_info = net_if.get_ip_info().expect("Error getting IP info");
+    let netif = wifi.netif();
+    let if_name = netif.get_name();
+    let ip_info = netif.get_ip_info().expect("Unable to get IP info");
     log::info!("WiFi interface: {}", if_name);
     log::info!("IP address: {}", ip_info.ip);
 

@@ -6,7 +6,9 @@ rust-version.workspace = true
 
 [dependencies]
 esp-idf-svc.workspace = true
+heapless.workspace = true
 log.workspace = true
+thiserror.workspace = true
 
 [build-dependencies]
 embuild.workspace = true

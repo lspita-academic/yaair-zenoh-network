@@ -23,10 +23,12 @@ esp-idf-svc = { version = "0.52.1", features = [
   "embassy-sync",
   "embassy-time-driver"
 ] }
+heapless = "0.9"
 log = "0.4"
-static_cell = "2.1.1"
-zenoh-pico = { path = "crates/zenoh-pico" }
 platform = { path = "crates/platform" }
+static_cell = "2.1.1"
+thiserror = "2.0"
+zenoh-pico = { path = "crates/zenoh-pico" }
 
 [profile.dev]
 opt-level = "z"
