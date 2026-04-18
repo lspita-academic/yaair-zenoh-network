@@ -21,7 +21,7 @@ esp-idf-svc.workspace = true
 log.workspace = true
 static_cell.workspace = true
 zenoh-pico.workspace = true
-platform.workspace = true
+esp-idf-platform.workspace = true
 
 [build-dependencies]
 embuild.workspace = true

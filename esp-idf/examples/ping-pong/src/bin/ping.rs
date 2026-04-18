@@ -3,7 +3,7 @@ use std::time::Duration;
 use embassy_executor::Spawner;
 use embassy_time::Timer;
 use esp_idf_svc::log::EspLogger;
-use platform::wifi::{Wifi, WifiConnection, config::WifiConfig};
+use esp_idf_platform::wifi::{Wifi, WifiConnection, config::WifiConfig};
 use static_cell::StaticCell;
 use zenoh_pico::{
     config::{ZenohConfigBuilder, ZenohConfigMode},

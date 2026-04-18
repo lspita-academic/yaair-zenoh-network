@@ -1,5 +1,5 @@
 [package]
-name = "platform"
+name = "esp-idf-platform"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true

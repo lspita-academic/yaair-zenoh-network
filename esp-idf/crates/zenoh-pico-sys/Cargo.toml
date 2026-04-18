@@ -1,5 +1,5 @@
 [package]
-name = "zenoh-pico-sys"
+name = "esp-idf-zenoh-pico-sys"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
