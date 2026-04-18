@@ -1,0 +1,14 @@
+[package]
+name = "esp-idf-config"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+# https://github.com/esp-rs/esp-idf-sys/blob/master/BUILD-OPTIONS.md
+[package.metadata.esp-idf-sys]
+mcu = "esp32c3"
+esp_idf_version = "v5.3.3"
+
+[build-dependencies]
+embuild.workspace = true
+zenoh-pico.workspace = true

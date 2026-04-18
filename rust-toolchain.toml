@@ -1,0 +1,5 @@
+[toolchain]
+# cargo build-std requires nightly
+# https://doc.rust-lang.org/cargo/reference/unstable.html#unstable-features
+channel = "nightly-2026-01-21"
+components = ["rust-src"]

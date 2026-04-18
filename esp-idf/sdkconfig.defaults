@@ -1,0 +1,7 @@
+# https://docs.espressif.com/projects/esp-idf/en/stable/esp32/api-reference/kconfig-reference.html
+
+# Rust requires a large stack size for the main task
+CONFIG_ESP_MAIN_TASK_STACK_SIZE=8192
+
+# Panic handler that logs and halts the CPU on panic
+CONFIG_ESP_SYSTEM_PANIC_PRINT_HALT=y

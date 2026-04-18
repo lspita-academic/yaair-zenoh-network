@@ -1,0 +1,36 @@
+[workspace]
+resolver = "3"
+members = ["crates/*", "examples/*"]
+default-members = ["examples/*"]
+
+[workspace.package]
+version = "0.1.0"
+edition = "2024"
+rust-version = "1.93"
+
+[workspace.dependencies]
+critical-section = { version = "1.2", default-features = false, features = [
+  "std"
+] }
+embassy-executor = { version = "0.9.1", features = [
+  "arch-std",
+  "executor-thread"
+] }
+embassy-sync = { version = "0.8.0" }
+embassy-time = { version = "0.5.0" }
+embuild = "0.33"
+esp-idf-svc = { version = "0.52.1", features = [
+  "embassy-sync",
+  "embassy-time-driver"
+] }
+esp-idf-sys = "0.37"
+log = "0.4"
+static_cell = "2.1.1"
+zenoh-pico = { path = "crates/zenoh-pico" }
+
+[profile.dev]
+opt-level = "z"
+debug = true  # Symbols are nice, and they don't increase the size on Flash
+
+[profile.release]
+opt-level = "s"

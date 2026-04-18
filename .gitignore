@@ -1,0 +1,11 @@
+.env
+
+# direnv
+.direnv/
+.envrc
+
+# rust
+/*/target/
+
+# zed python
+.ropeproject
