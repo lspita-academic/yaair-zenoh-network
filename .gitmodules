@@ -1,4 +1,4 @@
 [submodule "zenoh-pico"]
-	path = esp-idf/crates/zenoh-pico-sys/components/zenoh-pico/zenoh-pico
+	path = lib/zenoh-pico/zenoh-pico
 	url = git@github.com:eclipse-zenoh/zenoh-pico
 	branch = release/1.9.0
