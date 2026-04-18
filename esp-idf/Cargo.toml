@@ -29,6 +29,7 @@ platform = { path = "crates/platform" }
 static_cell = "2.1"
 thiserror = "2.0"
 zenoh-pico = { path = "crates/zenoh-pico" }
+zenoh-pico-sys = { path = "crates/zenoh-pico-sys" }
 
 [profile.dev]
 opt-level = "z"

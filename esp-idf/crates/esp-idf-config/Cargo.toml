@@ -11,4 +11,4 @@ esp_idf_version = "v5.3.3"
 
 [build-dependencies]
 embuild.workspace = true
-zenoh-pico.workspace = true
+zenoh-pico-sys.workspace = true

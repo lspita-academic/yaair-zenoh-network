@@ -675,7 +675,7 @@ name = "esp-idf-config"
 version = "0.1.0"
 dependencies = [
  "embuild",
- "zenoh-pico",
+ "zenoh-pico-sys",
 ]
 
 [[package]]
@@ -2159,8 +2159,17 @@ version = "0.1.0"
 dependencies = [
  "embassy-sync 0.8.0",
  "embuild",
- "esp-idf-svc",
  "log",
+ "zenoh-pico-sys",
+]
+
+[[package]]
+name = "zenoh-pico-sys"
+version = "0.1.0"
+dependencies = [
+ "embassy-sync 0.8.0",
+ "embuild",
+ "esp-idf-svc",
 ]
 
 [[package]]
