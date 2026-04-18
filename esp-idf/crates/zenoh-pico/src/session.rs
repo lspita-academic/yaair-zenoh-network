@@ -1,6 +1,6 @@
 use std::ffi::c_void;
 
-use esp_idf_sys::zenoh_pico::{
+use esp_idf_svc::sys::zenoh_pico::{
     _z_res_t_Z_OK, z_close, z_closure_zid, z_closure_zid_callback_t, z_closure_zid_move,
     z_config_move, z_id_t, z_info_peers_zid, z_open, z_open_options_t, z_owned_closure_zid_t,
     z_owned_session_t, z_session_drop, z_session_is_closed, z_session_loan, z_session_loan_mut,

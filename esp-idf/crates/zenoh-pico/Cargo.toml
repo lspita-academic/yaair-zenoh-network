@@ -10,8 +10,8 @@ bindings_header = "components/zenoh-pico/zenoh-pico/include/zenoh-pico.h"
 bindings_module = "zenoh_pico"
 
 [dependencies]
+esp-idf-svc.workspace = true
 embassy-sync.workspace = true
-esp-idf-sys.workspace = true
 log.workspace = true
 
 [build-dependencies]
