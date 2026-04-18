@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use embassy_executor::{Spawner, SpawnerTraceExt};
+use embassy_executor::Spawner;
 use embassy_time::Timer;
 use esp_idf_svc::log::EspLogger;
 use platform::wifi::{Wifi, WifiConnection, config::WifiConfig};
@@ -63,7 +63,5 @@ async fn main(spawner: Spawner) {
     log::info!("Zenoh config mode: {:?}", zenoh_config.mode());
 
     let zenoh_session = ZENOH_SESSION.init(ZenohSession::open(zenoh_config, None));
-    spawner
-        .spawn_named("ping", ping(zenoh_session))
-        .expect("Failed to spawn ping task");
+    spawner.spawn(ping(zenoh_session).expect("Failed to spawn ping task"));
 }

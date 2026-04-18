@@ -12,21 +12,21 @@ rust-version = "1.93"
 critical-section = { version = "1.2", default-features = false, features = [
   "std"
 ] }
-embassy-executor = { version = "0.9.1", features = [
-  "arch-std",
+embassy-executor = { version = "0.10", features = [
+  "platform-std",
   "executor-thread"
 ] }
-embassy-sync = { version = "0.8.0" }
-embassy-time = { version = "0.5.0" }
+embassy-sync = "0.8"
+embassy-time = "0.5"
 embuild = "0.33"
-esp-idf-svc = { version = "0.52.1", features = [
+esp-idf-svc = { version = "0.52", features = [
   "embassy-sync",
   "embassy-time-driver"
 ] }
 heapless = "0.9"
 log = "0.4"
 platform = { path = "crates/platform" }
-static_cell = "2.1.1"
+static_cell = "2.1"
 thiserror = "2.0"
 zenoh-pico = { path = "crates/zenoh-pico" }
 
