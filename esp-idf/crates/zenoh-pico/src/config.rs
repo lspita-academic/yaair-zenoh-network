@@ -1,6 +1,6 @@
 use std::{ffi::CStr, time::Duration};
 
-use crate::sys::zenoh_pico::{
+use zenoh_pico_sys::{
     _z_res_t_Z_OK, Z_CONFIG_LISTEN_KEY, Z_CONFIG_MODE_KEY, Z_CONFIG_MULTICAST_LOCATOR_KEY,
     Z_CONFIG_SCOUTING_TIMEOUT_KEY, z_config_default, z_config_drop, z_config_loan,
     z_config_loan_mut, z_config_move, z_owned_config_t, zp_config_get, zp_config_insert,

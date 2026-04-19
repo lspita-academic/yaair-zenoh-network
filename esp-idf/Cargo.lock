@@ -65,7 +65,7 @@ dependencies = [
  "bitflags 2.11.1",
  "cexpr",
  "clang-sys",
- "itertools",
+ "itertools 0.13.0",
  "log",
  "prettyplease",
  "proc-macro2",
@@ -676,7 +676,7 @@ name = "esp-idf-config"
 version = "0.1.0"
 dependencies = [
  "embuild",
- "esp-idf-zenoh-pico-sys",
+ "zenoh-pico-sys",
 ]
 
 [[package]]
@@ -752,14 +752,6 @@ dependencies = [
  "serde",
  "strum 0.24.1",
  "which",
-]
-
-[[package]]
-name = "esp-idf-zenoh-pico-sys"
-version = "0.1.0"
-dependencies = [
- "embuild",
- "esp-idf-svc",
 ]
 
 [[package]]
@@ -1021,6 +1013,15 @@ name = "itertools"
 version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "413ee7dfc52ee1a4949ceeb7dbc8a33f2d6c088194d9f922fb8318faf1f01186"
+dependencies = [
+ "either",
+]
+
+[[package]]
+name = "itertools"
+version = "0.14.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "2b192c782037fadd9cfa75548310488aabdbf3d2da73885b31bd0abd03351285"
 dependencies = [
  "either",
 ]
@@ -2188,8 +2189,26 @@ name = "zenoh-pico"
 version = "0.1.0"
 dependencies = [
  "embassy-sync 0.8.0",
- "esp-idf-zenoh-pico-sys",
  "log",
+ "zenoh-pico-macros",
+ "zenoh-pico-sys",
+]
+
+[[package]]
+name = "zenoh-pico-macros"
+version = "0.1.0"
+dependencies = [
+ "itertools 0.14.0",
+ "quote",
+ "syn 2.0.117",
+]
+
+[[package]]
+name = "zenoh-pico-sys"
+version = "0.1.0"
+dependencies = [
+ "embuild",
+ "esp-idf-svc",
 ]
 
 [[package]]

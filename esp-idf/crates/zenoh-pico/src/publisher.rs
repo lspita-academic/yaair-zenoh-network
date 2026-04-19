@@ -1,7 +1,7 @@
 use std::ffi::CStr;
 
 use super::session::ZenohSession;
-use crate::sys::zenoh_pico::{
+use zenoh_pico_sys::{
     z_bytes_from_string, z_bytes_move, z_declare_publisher, z_keyexpr_drop, z_keyexpr_from_str,
     z_keyexpr_loan, z_keyexpr_move, z_owned_bytes_t, z_owned_keyexpr_t, z_owned_publisher_t,
     z_owned_string_t, z_publisher_drop, z_publisher_loan, z_publisher_move,

@@ -5,10 +5,12 @@
 .envrc
 
 # rust
-/target/
+/target
+/*/target
 
 # esp
 /.embuild
+/*/.embuild
 
 # zed python
 .ropeproject

@@ -1,7 +1,7 @@
 [workspace]
 resolver = "3"
-members = ["esp-idf/crates/*", "esp-idf/examples/*", "shared/crates/*"]
-default-members = ["esp-idf/examples/*"]
+members = ["crates/*", "examples/*"]
+default-members = ["examples/*"]
 
 [workspace.package]
 version = "0.1.0"
@@ -19,18 +19,22 @@ embassy-executor = { version = "0.10", features = [
 embassy-sync = "0.8"
 embassy-time = "0.5"
 embuild = "0.33"
-esp-idf-config = { path = "esp-idf/crates/esp-idf-config" }
-esp-idf-platform = { path = "esp-idf/crates/platform" }
+esp-idf-config = { path = "crates/esp-idf-config" }
+esp-idf-platform = { path = "crates/esp-idf-platform" }
 esp-idf-svc = { version = "0.52", features = [
   "embassy-sync",
   "embassy-time-driver"
 ] }
-esp-idf-zenoh-pico-sys = { path = "esp-idf/crates/zenoh-pico-sys" }
 heapless = "0.9"
+itertools = "0.14.0"
 log = "0.4"
+quote = "1.0"
 static_cell = "2.1"
+syn = "2.0"
 thiserror = "2.0"
-zenoh-pico = { path = "shared/crates/zenoh-pico" }
+zenoh-pico = { path = "crates/zenoh-pico" }
+zenoh-pico-macros = { path = "crates/zenoh-pico-macros" }
+zenoh-pico-sys = { path = "crates/zenoh-pico-sys" }
 
 [profile.dev]
 opt-level = "z"

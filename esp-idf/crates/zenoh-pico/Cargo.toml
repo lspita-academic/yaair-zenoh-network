@@ -7,6 +7,5 @@ rust-version.workspace = true
 [dependencies]
 embassy-sync.workspace = true
 log.workspace = true
-
-[target.'cfg(target_os = "espidf")'.dependencies]
-esp-idf-zenoh-pico-sys.workspace = true
+zenoh-pico-sys.workspace = true
+zenoh-pico-macros.workspace = true

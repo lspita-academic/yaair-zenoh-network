@@ -1,12 +1,12 @@
 [package]
-name = "esp-idf-zenoh-pico-sys"
+name = "zenoh-pico-sys"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 
 [[package.metadata.esp-idf-sys.extra_components]]
-component_dirs = ["component"]
-bindings_header = "component/zenoh-pico-component.h"
+component_dirs = ["lib"]
+bindings_header = "lib/zenoh-pico-wrapper.h"
 bindings_module = "zenoh_pico"
 
 [dependencies]

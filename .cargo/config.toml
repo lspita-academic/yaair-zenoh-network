@@ -2,4 +2,4 @@
 ZENOH_PICO_FRAG_MAX_SIZE = "4096"
 ZENOH_PICO_BATCH_UNICAST_SIZE = "2048"
 ZENOH_PICO_BATCH_MULTICAST_SIZE = "2048"
-CARGO_WORKSPACE_DIR = { value = "", relative = true }
+LIBS_DIR = { value = "lib", relative = true }
