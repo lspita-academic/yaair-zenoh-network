@@ -12,6 +12,7 @@ rust-version = "1.93"
 critical-section = { version = "1.2", default-features = false, features = [
   "std"
 ] }
+darling = "0.23"
 embassy-executor = { version = "0.10", features = [
   "executor-thread",
   "platform-std"

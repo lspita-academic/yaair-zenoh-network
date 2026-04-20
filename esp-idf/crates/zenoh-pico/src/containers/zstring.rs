@@ -7,9 +7,10 @@ use zenoh_pico_sys::{
 };
 
 #[derive(ZValue, Debug)]
-#[zdrop(z_string_drop)]
-#[zmove(z_moved_string_t, z_string_move)]
-#[zloan(z_loaned_string_t, z_string_loan, z_string_loan_mut)]
-#[zdefault(z_string_empty)]
-// #[zmove(z_moved_string_t, z_string_move)]
+#[zvalue(
+    zdrop(zfn = z_string_drop),
+    zmove(ty = z_moved_string_t, zfn = z_string_move),
+    zloan(ty = z_loaned_string_t, zfn = z_string_loan, zfn_mut = z_string_loan_mut),
+    zdefault(zfn = z_string_empty),
+)]
 pub struct ZString(z_owned_string_t);
