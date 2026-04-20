@@ -28,11 +28,15 @@ esp-idf-svc = { version = "0.52", features = [
 heapless = "0.9"
 itertools = "0.14.0"
 log = "0.4"
+macro-utils = { path = "crates/macro-utils" }
+proc-macro-crate = "3.5"
+proc-macro2 = "1.0"
 quote = "1.0"
 static_cell = "2.1"
 syn = "2.0"
 thiserror = "2.0"
 zenoh-pico = { path = "crates/zenoh-pico" }
+zenoh-pico-core = { path = "crates/zenoh-pico-core" }
 zenoh-pico-macros = { path = "crates/zenoh-pico-macros" }
 zenoh-pico-sys = { path = "crates/zenoh-pico-sys" }
 

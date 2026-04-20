@@ -1135,6 +1135,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "macro-utils"
+version = "0.1.0"
+dependencies = [
+ "itertools 0.14.0",
+ "proc-macro-crate",
+ "proc-macro2",
+ "quote",
+ "syn 2.0.117",
+]
+
+[[package]]
 name = "matchers"
 version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2190,15 +2201,22 @@ version = "0.1.0"
 dependencies = [
  "embassy-sync 0.8.0",
  "log",
+ "zenoh-pico-core",
  "zenoh-pico-macros",
  "zenoh-pico-sys",
 ]
+
+[[package]]
+name = "zenoh-pico-core"
+version = "0.1.0"
 
 [[package]]
 name = "zenoh-pico-macros"
 version = "0.1.0"
 dependencies = [
  "itertools 0.14.0",
+ "macro-utils",
+ "proc-macro2",
  "quote",
  "syn 2.0.117",
 ]
