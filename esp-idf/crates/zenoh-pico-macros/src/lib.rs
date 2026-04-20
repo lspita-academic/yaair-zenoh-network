@@ -13,6 +13,5 @@ pub(crate) fn zenoh_pico_path() -> syn::Result<Path> {
 #[proc_macro_derive(ZValue, attributes(zdrop, zmove, zloan, zdefault))]
 pub fn zvalue_derive(input: TokenStream) -> TokenStream {
     let input = parse_macro_input!(input as ZValueDerive);
-
     input.into_token_stream().into()
 }

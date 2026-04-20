@@ -1,3 +1,5 @@
+use std::fmt::Debug;
+
 use crate::zvalue::ZValue;
 use zenoh_pico_sys::{
     z_loaned_string_t, z_moved_string_t, z_owned_string_t, z_string_drop, z_string_empty,

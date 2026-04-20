@@ -62,8 +62,6 @@ impl Parse for ZDefaultAttribute {
 }
 
 struct ZLoanAttribute {
-    trait_path: Path,
-    trait_path_mut: Path,
     ty: Type,
     callable: Path,
     callable_mut: Option<Path>,
@@ -71,10 +69,6 @@ struct ZLoanAttribute {
 
 impl Parse for ZLoanAttribute {
     fn parse(input: ParseStream) -> syn::Result<Self> {
-        let zenoh_pico_path = zenoh_pico_path()?;
-        let trait_path = parse_quote!(#zenoh_pico_path::zvalue::ZLoan);
-        let trait_path_mut = parse_quote!(#zenoh_pico_path::zvalue::ZLoanMut);
-
         let ty: Type = input.parse()?;
         let _comma: Token![,] = input.parse()?;
         let callable: Path = input.parse()?;
@@ -88,8 +82,6 @@ impl Parse for ZLoanAttribute {
 
         if input.is_empty() {
             Ok(Self {
-                trait_path,
-                trait_path_mut,
                 ty,
                 callable,
                 callable_mut,
@@ -101,7 +93,6 @@ impl Parse for ZLoanAttribute {
 }
 
 pub struct ZValueDerive {
-    trait_path: Path,
     derive_input: DeriveInput,
     zvalue_type: Type,
     zdrop: ZDropAttribute,
@@ -138,11 +129,8 @@ impl Parse for ZValueDerive {
         };
         let zdefault = attributes::parse_single_attribute(attrs, "zdefault")?;
         let zloan = attributes::parse_single_attribute(attrs, "zloan")?;
-        let zenoh_pico_path = zenoh_pico_path()?;
-        let trait_path = parse_quote!(#zenoh_pico_path::zvalue::ZValue);
 
         Ok(Self {
-            trait_path,
             derive_input,
             zvalue_type,
             zdrop,
@@ -155,8 +143,10 @@ impl Parse for ZValueDerive {
 
 impl ToTokens for ZValueDerive {
     fn to_tokens(&self, tokens: &mut TokenStream) {
+        let zenoh_pico_path = zenoh_pico_path().unwrap();
+
+        let zvalue_trait_path: Path = parse_quote!(#zenoh_pico_path::zvalue::ZValue);
         let zvalue_type = &self.zvalue_type;
-        let zvalue_trait_path = &self.trait_path;
         let zmove_type = &self.zmove.ty;
         let zmove_callable = &self.zmove.callable;
         let zdrop_callable = &self.zdrop.callable;
@@ -218,8 +208,8 @@ impl ToTokens for ZValueDerive {
         });
 
         if let Some(zloan) = &self.zloan {
+            let zloan_trait_path: Path = parse_quote!(#zenoh_pico_path::zvalue::ZLoan);
             let zloan_type = &zloan.ty;
-            let zloan_trait_path = &zloan.trait_path;
             let zloan_callable = &zloan.callable;
 
             let zloan_impl = derive::impl_signature(
@@ -236,7 +226,7 @@ impl ToTokens for ZValueDerive {
             });
 
             if let Some(zloan_callable_mut) = &zloan.callable_mut {
-                let zloan_trait_path_mut = &zloan.trait_path_mut;
+                let zloan_trait_path_mut: Path = parse_quote!(#zenoh_pico_path::zvalue::ZLoanMut);
 
                 let zloan_mut_impl = derive::impl_signature(
                     &self.derive_input,
