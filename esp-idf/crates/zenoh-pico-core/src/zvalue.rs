@@ -1,6 +1,6 @@
 use std::fmt::Debug;
 
-pub trait ZValue<T: Default, M>: From<T> + Default + Debug + Clone {
+pub trait ZValue<T: Default, M>: From<T> + Default + Debug {
     fn zmove(self) -> *mut M;
 }
 
