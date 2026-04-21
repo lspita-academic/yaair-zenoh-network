@@ -1,6 +1,5 @@
-use darling::FromDeriveInput;
 use proc_macro::TokenStream;
-use syn::{DeriveInput, Path, parse_macro_input};
+use syn::{Path, parse_macro_input};
 
 mod zvalue;
 use zvalue::ZValueConfig;
@@ -18,11 +17,7 @@ pub(crate) fn zenoh_pico_sys_path() -> syn::Result<Path> {
 #[proc_macro_attribute]
 pub fn zvalue(args: TokenStream, input: TokenStream) -> TokenStream {
     let zvalue_config = parse_macro_input!(args as ZValueConfig);
-    let derive_input = parse_macro_input!(input as DeriveInput);
-    let zvalue_input = match ZValueInput::from_derive_input(&derive_input) {
-        Ok(z) => z,
-        Err(e) => return e.write_errors().into(),
-    };
+    let zvalue_input = parse_macro_input!(input as ZValueInput);
 
     impl_zvalue(zvalue_input, &zvalue_config)
         .unwrap_or_else(|e| e.to_compile_error())

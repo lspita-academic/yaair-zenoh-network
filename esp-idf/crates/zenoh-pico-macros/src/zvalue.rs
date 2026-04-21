@@ -1,8 +1,8 @@
-use darling::{FromDeriveInput, FromMeta};
+use darling::FromMeta;
 use macro_utils::derive;
 use proc_macro2::TokenStream;
 use quote::{ToTokens, format_ident, quote};
-use syn::{DeriveInput, Fields, Path, parse_quote};
+use syn::{DeriveInput, Fields, Path, parse::Parse, parse_quote};
 
 use crate::{zenoh_pico_path, zenoh_pico_sys_path};
 
@@ -61,9 +61,21 @@ pub struct ZValueConfig {
     zloan: Option<ZLoanAttr>,
 }
 
-#[derive(FromDeriveInput)]
-#[darling(supports(struct_unit))]
 pub struct ZValueInput(DeriveInput);
+
+impl Parse for ZValueInput {
+    fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
+        let derive_input = input.parse::<DeriveInput>()?;
+
+        match &derive_input.data {
+            syn::Data::Struct(s) if matches!(s.fields, Fields::Unit) => {},
+            syn::Data::Struct(_) => return Err(input.error("Struct must be a unit struct")),
+            _ => return Err(input.error("Only unit structs are supported")),
+        };
+
+        Ok(Self(derive_input))
+    }
+}
 
 pub fn impl_zvalue(input: ZValueInput, config: &ZValueConfig) -> syn::Result<TokenStream> {
     let mut tokens = TokenStream::new();
@@ -86,7 +98,7 @@ pub fn impl_zvalue(input: ZValueInput, config: &ZValueConfig) -> syn::Result<Tok
         syn::Data::Struct(struct_data) => {
             struct_data.fields = Fields::Unnamed(parse_quote!((#zown_ty)))
         }
-        _ => panic!("Darling supports(struct_unit) ensures struct"),
+        _ => panic!("Expected unit struct"),
     };
 
     tokens.extend(quote! {
