@@ -1,20 +1,30 @@
 use darling::FromDeriveInput;
 use proc_macro::TokenStream;
-use quote::ToTokens;
-use syn::{DeriveInput, parse_macro_input};
+use syn::{DeriveInput, Path, parse_macro_input};
 
 mod zvalue;
-use zvalue::ZValueReceiver;
+use zvalue::ZValueConfig;
 
-pub(crate) fn zenoh_pico_path() -> syn::Result<syn::Path> {
+use crate::zvalue::{ZValueInput, impl_zvalue};
+
+pub(crate) fn zenoh_pico_path() -> syn::Result<Path> {
     macro_utils::krate::crate_path("zenoh-pico")
 }
 
-#[proc_macro_derive(ZValue, attributes(zvalue))]
-pub fn zvalue_derive(input: TokenStream) -> TokenStream {
+pub(crate) fn zenoh_pico_sys_path() -> syn::Result<Path> {
+    macro_utils::krate::crate_path("zenoh-pico-sys")
+}
+
+#[proc_macro_attribute]
+pub fn zvalue(args: TokenStream, input: TokenStream) -> TokenStream {
+    let zvalue_config = parse_macro_input!(args as ZValueConfig);
     let derive_input = parse_macro_input!(input as DeriveInput);
-    match ZValueReceiver::from_derive_input(&derive_input) {
-        Ok(receiver) => receiver.into_token_stream().into(),
-        Err(e) => e.write_errors().into(),
-    }
+    let zvalue_input = match ZValueInput::from_derive_input(&derive_input) {
+        Ok(z) => z,
+        Err(e) => return e.write_errors().into(),
+    };
+
+    impl_zvalue(zvalue_input, &zvalue_config)
+        .unwrap_or_else(|e| e.to_compile_error())
+        .into()
 }
