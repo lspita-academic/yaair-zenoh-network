@@ -25,20 +25,19 @@ struct ZMoveAttr {
     zfn: Option<Path>,
 }
 
-#[derive(FromMeta, Default, Clone)]
-#[darling(default)]
+#[derive(FromMeta, Clone)]
 struct ZDefaultAttr {
-    zfn: Option<Path>,
+    zfn: Path,
 }
 
 #[derive(FromMeta, Default, Clone)]
-#[darling(default)]
+#[darling(default, from_word = || FromMeta::from_list(&[]))]
 struct ZLoanMutAttr {
     zfn: Option<Path>,
 }
 
 #[derive(FromMeta, Default, Clone)]
-#[darling(default)]
+#[darling(default, from_word = || FromMeta::from_list(&[]))]
 struct ZLoanAttr {
     ty: Option<Path>,
     zfn: Option<Path>,
@@ -68,7 +67,7 @@ impl Parse for ZValueInput {
         let derive_input = input.parse::<DeriveInput>()?;
 
         match &derive_input.data {
-            syn::Data::Struct(s) if matches!(s.fields, Fields::Unit) => {},
+            syn::Data::Struct(s) if matches!(s.fields, Fields::Unit) => {}
             syn::Data::Struct(_) => return Err(input.error("Struct must be a unit struct")),
             _ => return Err(input.error("Only unit structs are supported")),
         };
@@ -161,7 +160,7 @@ pub fn impl_zvalue(input: ZValueInput, config: &ZValueConfig) -> syn::Result<Tok
         .zdefault
         .clone()
         .map(|z| {
-            let zdefault_fn = z.zfn;
+            let zdefault_fn = &z.zfn;
             quote! { unsafe { #zdefault_fn(&mut zvalue); } }
         })
         .unwrap_or_default();
