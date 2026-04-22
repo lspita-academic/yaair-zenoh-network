@@ -6,8 +6,7 @@ use esp_idf_svc::log::EspLogger;
 use esp_idf_platform::wifi::{Wifi, WifiConnection, config::WifiConfig};
 use static_cell::StaticCell;
 use zenoh_pico::{
-    config::{ZenohConfigBuilder, ZenohConfigMode},
-    session::ZenohSession,
+    config::{ZenohConfigBuilder, ZenohConfigMode}, locator::{Locator, LocatorProtocol}, session::ZenohSession
 };
 
 static ZENOH_SESSION: StaticCell<ZenohSession> = StaticCell::new();
@@ -54,13 +53,19 @@ async fn main(spawner: Spawner) {
     log::info!("IP address: {}", ip_info.ip);
 
     let zenoh_config = ZenohConfigBuilder::default()
-        .mode(ZenohConfigMode::Peer)
-        .scouting_timeout(Duration::from_secs(30))
-        .multicast_locator(&format!("udp/224.0.0.224:7446#iface={}", if_name))
-        .listen(&format!("udp/224.0.0.224:7447#iface={}", if_name))
+        .mode(&ZenohConfigMode::Peer)
+        .scouting_timeout(&Duration::from_secs(30))
+        .multicast_locator(&Locator {
+            protocol: LocatorProtocol::UDP,
+            endpoint: "224.0.0.224:7446".parse().unwrap(),
+            iface: Some(if_name.to_string()),
+        })
+        .listen(&Locator {
+            protocol: LocatorProtocol::UDP,
+            endpoint: "224.0.0.224:7447".parse().unwrap(),
+            iface: Some(if_name.to_string()),
+        })
         .build();
-
-    log::info!("Zenoh config mode: {:?}", zenoh_config.mode());
 
     let zenoh_session = ZENOH_SESSION.init(ZenohSession::open(zenoh_config, None));
     spawner.spawn(pong(zenoh_session).expect("Failed to spawn pong task"));

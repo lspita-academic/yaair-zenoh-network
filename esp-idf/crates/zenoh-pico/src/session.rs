@@ -1,8 +1,10 @@
 use std::ffi::c_void;
 
+use zenoh_pico_core::zvalue::ZValue;
+
 use crate::sys::{
     _z_res_t_Z_OK, z_close, z_closure_zid, z_closure_zid_callback_t, z_closure_zid_move,
-    z_config_move, z_id_t, z_info_peers_zid, z_open, z_open_options_t, z_owned_closure_zid_t,
+    z_id_t, z_info_peers_zid, z_open, z_open_options_t, z_owned_closure_zid_t,
     z_owned_session_t, z_session_drop, z_session_is_closed, z_session_loan, z_session_loan_mut,
     z_session_move, zp_start_lease_task, zp_start_read_task,
 };
@@ -30,14 +32,13 @@ impl Drop for ZenohSession {
 }
 
 impl ZenohSession {
-    pub fn open(mut config: ZenohConfig, z_open_options: Option<z_open_options_t>) -> Self {
-        let z_config = &mut config.z_config;
+    pub fn open(config: ZenohConfig, z_open_options: Option<z_open_options_t>) -> Self {
         let mut z_session = z_owned_session_t::default();
         let open_options = z_open_options
             .map(|o| &o as *const z_open_options_t)
             .unwrap_or(std::ptr::null());
 
-        let result = unsafe { z_open(&mut z_session, z_config_move(z_config), open_options) };
+        let result = unsafe { z_open(&mut z_session, config.zmove(), open_options) };
         assert!(
             result == _z_res_t_Z_OK as i8, // crash if no scouts found
             "Cannot open zenoh session: {}",
