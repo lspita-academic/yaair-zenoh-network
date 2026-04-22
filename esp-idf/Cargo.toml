@@ -34,9 +34,12 @@ proc-macro-crate = "3.5"
 proc-macro2 = "1.0"
 quote = "1.0"
 static_cell = "2.1"
+strum = { version = "0.28", features = ["default", "derive"] }
 syn = "2.0"
 thiserror = "2.0"
 zenoh-pico = { path = "crates/zenoh-pico" }
+zenoh-pico-core = { path = "crates/zenoh-pico-core" }
+zenoh-pico-macros = { path = "crates/zenoh-pico-macros" }
 zenoh-pico-sys = { path = "crates/zenoh-pico-sys" }
 
 [profile.dev]
