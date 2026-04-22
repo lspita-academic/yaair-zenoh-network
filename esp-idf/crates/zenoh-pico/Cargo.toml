@@ -7,6 +7,4 @@ rust-version.workspace = true
 [dependencies]
 embassy-sync.workspace = true
 log.workspace = true
-zenoh-pico-core.workspace = true
-zenoh-pico-macros.workspace = true
 zenoh-pico-sys.workspace = true
