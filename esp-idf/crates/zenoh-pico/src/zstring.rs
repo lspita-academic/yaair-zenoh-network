@@ -5,6 +5,5 @@ use crate::{zown, zview};
 #[zown(base = "string", zdefault(zfn = z_string_empty), zloan(mutable))]
 pub struct ZString;
 
-
 #[zview(base = "string", zdefault(zfn = z_view_string_empty), zloan(mutable))]
 pub struct ZViewString;
