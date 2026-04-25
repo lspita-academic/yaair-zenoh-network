@@ -143,16 +143,10 @@ pub fn impl_zown(input: ZValueInput, config: ZOwnConfig) -> syn::Result<TokenStr
         Some(format_ident!("z_{name}_move")),
         &zenoh_pico_sys,
     );
-    let zdrop_fn = path_or_sys_default_tokens(
-        config.zdrop.and_then(|z| z.zfn),
-        Some(format_ident!("z_{name}_drop")),
-        &zenoh_pico_sys,
-    );
 
     let zown_trait: Path = parse_quote!(#zenoh_pico::zvalue::ZOwn);
     let zown_impl =
         derive::impl_signature(&input, Some(&quote! { #zown_trait<#zown_ty, #zmove_ty> }));
-    let drop_impl = derive::impl_signature(&input, Some(&quote! { core::ops::Drop }));
 
     tokens.extend(quote! {
         #zown_impl {
@@ -160,7 +154,15 @@ pub fn impl_zown(input: ZValueInput, config: ZOwnConfig) -> syn::Result<TokenStr
                 unsafe { #zmove_fn(&mut self.0) }
             }
         }
+    });
 
+    let zdrop_fn = path_or_sys_default_tokens(
+        config.zdrop.and_then(|z| z.zfn),
+        Some(format_ident!("z_{name}_drop")),
+        &zenoh_pico_sys,
+    );
+    let drop_impl = derive::impl_signature(&input, Some(&quote! { core::ops::Drop }));
+    tokens.extend(quote! {
         #drop_impl {
             fn drop(&mut self) {
                 unsafe { #zdrop_fn(#zmove_fn(&mut self.0)); }
