@@ -20,7 +20,7 @@ impl FromStr for ZString {
         unsafe {
             z_string_copy_from_str(&mut zstring, value.as_ptr()).zresult(())?;
         }
-        Ok(Self(zstring))
+        Ok(Self::from(zstring))
     }
 }
 

@@ -17,6 +17,6 @@ impl FromStr for KeyExpr {
         unsafe {
             z_keyexpr_from_str(&mut keyexpr, value.as_ptr()).zresult(())?;
         }
-        Ok(Self(keyexpr))
+        Ok(Self::from(keyexpr))
     }
 }
