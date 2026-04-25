@@ -1,6 +1,7 @@
 #![allow(non_upper_case_globals)]
 
 pub mod config;
+pub mod keyexpr;
 pub mod locator;
 pub mod publisher;
 pub mod result;

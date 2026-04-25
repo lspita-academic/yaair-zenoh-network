@@ -795,6 +795,10 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9f1f227452a390804cdb637b74a86990f2a7d7ba4b7d5693aac9b4dd6defd8d6"
 
 [[package]]
+name = "ffi-utils"
+version = "0.1.0"
+
+[[package]]
 name = "filetime"
 version = "0.2.27"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2255,6 +2259,7 @@ name = "zenoh-pico"
 version = "0.1.0"
 dependencies = [
  "embassy-sync 0.8.0",
+ "ffi-utils",
  "log",
  "strum 0.28.0",
  "zenoh-pico-core",

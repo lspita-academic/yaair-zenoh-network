@@ -6,6 +6,7 @@ rust-version.workspace = true
 
 [dependencies]
 embassy-sync.workspace = true
+ffi-utils.workspace = true
 log.workspace = true
 strum.workspace = true
 zenoh-pico-core.workspace = true
