@@ -115,7 +115,7 @@ fn path_or_sys_default(
     )
 }
 
-pub fn impl_zown(input: ZValueInput, config: ZOwnConfig) -> syn::Result<TokenStream> {
+pub fn impl_zown(mut input: ZValueInput, config: ZOwnConfig) -> syn::Result<TokenStream> {
     let mut tokens = TokenStream::new();
     let zenoh_pico = zenoh_pico_path()?;
     let zenoh_pico_sys = zenoh_pico_sys_path()?;
@@ -256,8 +256,6 @@ pub fn impl_zown(input: ZValueInput, config: ZOwnConfig) -> syn::Result<TokenStr
             });
         }
     }
-
-    let input_tokens = input.to_tokens(&zvalue_ty)?;
 
     Ok(tokens)
 }

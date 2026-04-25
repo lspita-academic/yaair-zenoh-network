@@ -4,7 +4,6 @@ pub trait ZValue<T: Default>: From<T> + Default + Debug {}
 
 pub trait ZOwn<T: Default, M>: ZValue<T> {
     fn zmove(self) -> *mut M;
-    fn zdrop(self);
 }
 
 pub trait ZView<T: Default>: ZValue<T> {}
