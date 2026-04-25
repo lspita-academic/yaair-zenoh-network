@@ -50,7 +50,7 @@ impl ZenohConfigKey {
     }
 }
 
-#[zown(name = "config", zdefault(zfn = z_config_default), zloan(mutable))]
+#[zown(base = "config", zdefault(zfn = z_config_default), zloan(mutable))]
 pub struct ZenohConfig;
 
 #[derive(Default)]
