@@ -15,7 +15,7 @@ use crate::{
     result::{ZResult, ZenohError},
     sys::zp_config_insert,
     whatami::WhatAmIMask,
-    zvalue,
+    zown,
 };
 
 #[derive(Debug, Default, EnumString, Display)]
@@ -50,7 +50,7 @@ impl ZenohConfigKey {
     }
 }
 
-#[zvalue(name = "config", zdefault(zfn = z_config_default), zloan(mutable))]
+#[zown(name = "config", zdefault(zfn = z_config_default), zloan(mutable))]
 pub struct ZenohConfig;
 
 #[derive(Default)]

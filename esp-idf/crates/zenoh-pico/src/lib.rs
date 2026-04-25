@@ -7,6 +7,7 @@ pub mod result;
 pub mod session;
 pub mod subscriber;
 pub mod whatami;
+pub mod zstring;
 
 pub use zenoh_pico_core::*;
 pub use zenoh_pico_macros::*;

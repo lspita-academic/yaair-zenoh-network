@@ -26,6 +26,7 @@ esp-idf-svc = { version = "0.52", features = [
   "embassy-sync",
   "embassy-time-driver"
 ] }
+ffi-utils = { path = "crates/ffi-utils" }
 heapless = "0.9"
 itertools = "0.14.0"
 log = "0.4"

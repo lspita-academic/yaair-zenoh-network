@@ -1,6 +1,6 @@
 use std::ffi::c_void;
 
-use zenoh_pico_core::zvalue::ZValue;
+use zenoh_pico_core::zvalue::ZOwn;
 
 use crate::sys::{
     _z_res_t_Z_OK, z_close, z_closure_zid, z_closure_zid_callback_t, z_closure_zid_move,
