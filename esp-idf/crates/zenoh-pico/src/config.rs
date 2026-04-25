@@ -1,4 +1,4 @@
-use std::{borrow::Borrow, ffi::CStr, time::Duration};
+use std::{ffi::CStr, time::Duration};
 
 use strum::{Display, EnumString};
 use zenoh_pico_core::{
@@ -57,18 +57,12 @@ pub struct ZenohConfig;
 pub struct ZenohConfigBuilder(ZenohConfig);
 
 impl ZenohConfigBuilder {
-    fn set<V: Borrow<str>>(mut self, key: ZenohConfigKey, value: V) -> Result<Self, ZenohError> {
+    fn set<V: AsRef<str>>(mut self, key: ZenohConfigKey, value: V) -> Result<Self, ZenohError> {
         let z_config = &mut self.0;
-        let value_bytes = [value.borrow().as_bytes(), &[0]].concat();
+        let value_bytes = [value.as_ref().as_bytes(), &[0]].concat();
         let value_cstr = CStr::from_bytes_until_nul(value_bytes.as_slice()).unwrap();
-        unsafe {
-            zp_config_insert(
-                z_config.zloan_mut(),
-                key.borrow().num_key(),
-                value_cstr.as_ptr(),
-            )
-        }
-        .zresult(self)
+        unsafe { zp_config_insert(z_config.zloan_mut(), key.num_key(), value_cstr.as_ptr()) }
+            .zresult(self)
     }
 
     pub fn mode(self, mode: &ZenohConfigMode) -> Self {
