@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use darling::FromMeta;
 use macro_utils::derive;
 use proc_macro2::TokenStream;
@@ -5,6 +7,11 @@ use quote::{ToTokens, format_ident, quote};
 use syn::{DeriveInput, Fields, Ident, Path, parse::Parse, parse_quote};
 
 use crate::{zenoh_pico_path, zenoh_pico_sys_path};
+
+#[derive(FromMeta, Clone)]
+struct ZValueAttr {
+    ty: Option<Path>,
+}
 
 #[derive(FromMeta, Default, Clone)]
 #[darling(default)]
@@ -21,7 +28,7 @@ struct ZMoveAttr {
 
 #[derive(FromMeta, Clone)]
 struct ZDefaultAttr {
-    zfn: Path,
+    zfn: Option<Path>,
 }
 
 #[derive(FromMeta, Default, Clone)]
@@ -43,7 +50,7 @@ struct ZLoanAttr {
 pub struct ZOwnConfig {
     name: String,
     #[darling(default)]
-    ty: Option<Path>,
+    zvalue: Option<ZValueAttr>,
     #[darling(default)]
     zdrop: Option<ZDropAttr>,
     #[darling(default)]
@@ -59,6 +66,8 @@ pub struct ZOwnConfig {
 pub struct ZViewConfig {
     name: String,
     #[darling(default)]
+    zvalue: Option<ZValueAttr>,
+    #[darling(default)]
     zdefault: Option<ZDefaultAttr>,
     #[darling(default)]
     zloan: Option<ZLoanAttr>,
@@ -66,17 +75,31 @@ pub struct ZViewConfig {
 
 pub struct ZValueInput(DeriveInput);
 
+impl Deref for ZValueInput {
+    type Target = DeriveInput;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
 impl Parse for ZValueInput {
     fn parse(input: syn::parse::ParseStream) -> syn::Result<Self> {
-        let derive_input = input.parse::<DeriveInput>()?;
+        let mut derive_input = input.parse::<DeriveInput>()?;
 
-        match &derive_input.data {
+        match &mut derive_input.data {
             syn::Data::Struct(s) if matches!(s.fields, Fields::Unit) => {}
             syn::Data::Struct(_) => return Err(input.error("Struct must be a unit struct")),
             _ => return Err(input.error("Only unit structs are supported")),
         };
 
         Ok(Self(derive_input))
+    }
+}
+
+impl ToTokens for ZValueInput {
+    fn to_tokens(&self, tokens: &mut TokenStream) {
+        self.0.to_tokens(tokens);
     }
 }
 
@@ -94,19 +117,17 @@ fn path_or_sys_default(
 
 pub fn impl_zown(input: ZValueInput, config: ZOwnConfig) -> syn::Result<TokenStream> {
     let mut tokens = TokenStream::new();
-    let mut input = input.0;
-
     let zenoh_pico = zenoh_pico_path()?;
     let zenoh_pico_sys = zenoh_pico_sys_path()?;
-    let name = config.name;
 
+    let name = config.name;
     let zvalue_ty = path_or_sys_default(
-        config.ty,
+        config.zvalue.and_then(|z| z.ty),
         &format_ident!("z_owned_{name}_t"),
         &zenoh_pico_sys,
     )?;
 
-    match &mut input.data {
+    match &mut input.0.data {
         syn::Data::Struct(struct_data) => {
             struct_data.fields = Fields::Unnamed(syn::parse2(quote! {(#zvalue_ty)})?)
         }
@@ -171,7 +192,7 @@ pub fn impl_zown(input: ZValueInput, config: ZOwnConfig) -> syn::Result<TokenStr
         }
     });
 
-    let zdefault_call = config.zdefault.map(|z| z.zfn).map(|zfn| {
+    let zdefault_call = config.zdefault.and_then(|z| z.zfn).map(|zfn| {
         quote! {
             unsafe {
                 #zfn(&mut zvalue);
@@ -235,6 +256,8 @@ pub fn impl_zown(input: ZValueInput, config: ZOwnConfig) -> syn::Result<TokenStr
             });
         }
     }
+
+    let input_tokens = input.to_tokens(&zvalue_ty)?;
 
     Ok(tokens)
 }
