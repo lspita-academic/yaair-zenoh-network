@@ -5,7 +5,7 @@ use syn::{Path, parse_macro_input};
 mod zvalue;
 use zvalue::ZOwnConfig;
 
-use crate::zvalue::{ZValueInput, impl_zown};
+use crate::zvalue::{ZValueInput, ZViewConfig};
 
 pub(crate) fn zenoh_pico_path() -> syn::Result<Path> {
     macro_utils::krate::crate_path("zenoh-pico")
@@ -18,10 +18,20 @@ pub(crate) fn zenoh_pico_sys_path() -> syn::Result<Path> {
 
 #[proc_macro_attribute]
 pub fn zown(args: TokenStream, input: TokenStream) -> TokenStream {
-    let zvalue_config = parse_macro_input!(args as ZOwnConfig);
+    let zown_config = parse_macro_input!(args as ZOwnConfig);
     let zvalue_input = parse_macro_input!(input as ZValueInput);
 
-    impl_zown(zvalue_input, zvalue_config)
+    zvalue::zown(zvalue_input, zown_config)
+        .unwrap_or_else(|e| e.to_compile_error())
+        .into()
+}
+
+#[proc_macro_attribute]
+pub fn zview(args: TokenStream, input: TokenStream) -> TokenStream {
+    let zview_config = parse_macro_input!(args as ZViewConfig);
+    let zvalue_input = parse_macro_input!(input as ZValueInput);
+
+    zvalue::zview(zvalue_input, zview_config)
         .unwrap_or_else(|e| e.to_compile_error())
         .into()
 }

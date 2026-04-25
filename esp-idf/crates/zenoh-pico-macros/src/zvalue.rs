@@ -128,22 +128,46 @@ fn path_or_sys_default(
 
 fn zvalue_type_path(
     zvalue: Option<&ZValueAttr>,
-    base: &str,
+    default_sys_ident: &Ident,
     zenoh_pico_sys: &Path,
 ) -> syn::Result<Path> {
     path_or_sys_default(
         zvalue.and_then(|z| z.ty.as_ref()),
-        &format_ident!("z_owned_{base}_t"),
+        default_sys_ident,
         zenoh_pico_sys,
     )
 }
 
+fn ztype_ident(name: &str, base: &str) -> Ident {
+    format_ident!("z_{name}_{base}_t")
+}
+
+fn zfn_ident(name: &str, base: &str, fn_prefix: Option<&str>) -> Ident {
+    let fn_base = [
+        fn_prefix.map(|p| format!("{p}_")).unwrap_or_default(),
+        base.to_string(),
+    ]
+    .concat();
+    format_ident!("z_{fn_base}_{name}")
+}
+
 struct AttrParams<'a> {
-    base: &'a String,
+    base: &'a str,
     input: &'a ZValueInput,
     zenoh_pico: &'a Path,
     zenoh_pico_sys: &'a Path,
     zvalue_ty: &'a Path,
+    fn_prefix: Option<&'a str>,
+}
+
+impl AttrParams<'_> {
+    pub fn ztype_ident(&self, name: &str) -> Ident {
+        self::ztype_ident(name, self.base)
+    }
+
+    pub fn zfn_ident(&self, name: &str) -> Ident {
+        self::zfn_ident(name, self.base, self.fn_prefix)
+    }
 }
 
 trait AttrToTokens {
@@ -179,7 +203,6 @@ impl AttrToTokens for Option<ZValueAttr> {
 impl AttrToTokens for Option<ZMoveAttr> {
     fn attr_tokens(&self, attr_params: &AttrParams) -> syn::Result<TokenStream> {
         let &AttrParams {
-            base,
             input,
             zenoh_pico,
             zenoh_pico_sys,
@@ -193,17 +216,17 @@ impl AttrToTokens for Option<ZMoveAttr> {
             .unwrap_or([None, None, None]);
         let zmove_ty = path_or_sys_default(
             zmove_ty_cfg,
-            &format_ident!("z_moved_{base}_t"),
+            &attr_params.ztype_ident("moved"),
             &zenoh_pico_sys,
         )?;
         let zmove_fn = path_or_sys_default(
             zmove_fn_cfg,
-            &format_ident!("z_{base}_move"),
+            &attr_params.zfn_ident("move"),
             &zenoh_pico_sys,
         )?;
         let zdrop_fn = path_or_sys_default(
             zdrop_fn_cfg,
-            &format_ident!("z_{base}_drop"),
+            &attr_params.zfn_ident("drop"),
             &zenoh_pico_sys,
         )?;
 
@@ -256,7 +279,6 @@ impl AttrToTokens for Option<ZDefaultAttr> {
 impl AttrToTokens for Option<ZLoanAttr> {
     fn attr_tokens(&self, attr_params: &AttrParams) -> syn::Result<TokenStream> {
         let &AttrParams {
-            base,
             input,
             zenoh_pico,
             zenoh_pico_sys,
@@ -270,12 +292,12 @@ impl AttrToTokens for Option<ZLoanAttr> {
 
         let zloan_ty = path_or_sys_default(
             zloan.ty.as_ref(),
-            &format_ident!("z_loaned_{base}_t"),
+            &attr_params.ztype_ident("loaned"),
             &zenoh_pico_sys,
         )?;
         let zloan_fn = path_or_sys_default(
             zloan.zfn.as_ref(),
-            &format_ident!("z_{base}_loan"),
+            &attr_params.zfn_ident("loan"),
             &zenoh_pico_sys,
         )?;
 
@@ -299,7 +321,7 @@ impl AttrToTokens for Option<ZLoanAttr> {
 
         let zloan_fn_mut = path_or_sys_default(
             zloan_mut.zfn.as_ref(),
-            &format_ident!("z_{base}_loan_mut"),
+            &attr_params.zfn_ident("loan_mut"),
             &zenoh_pico_sys,
         )?;
 
@@ -320,13 +342,17 @@ impl AttrToTokens for Option<ZLoanAttr> {
     }
 }
 
-pub fn impl_zown(mut input: ZValueInput, config: ZOwnConfig) -> syn::Result<TokenStream> {
+pub fn zown(mut input: ZValueInput, config: ZOwnConfig) -> syn::Result<TokenStream> {
     let mut tokens = TokenStream::new();
     let base = config.base;
     let zenoh_pico = zenoh_pico_path()?;
     let zenoh_pico_sys = zenoh_pico_sys_path()?;
 
-    let zvalue_ty = zvalue_type_path(config.zvalue.as_ref(), &base, &zenoh_pico_sys)?;
+    let zvalue_ty = zvalue_type_path(
+        config.zvalue.as_ref(),
+        &ztype_ident("owned", &base),
+        &zenoh_pico_sys,
+    )?;
     tokens.extend(input.transform_struct(&zvalue_ty)?);
 
     let attr_params = AttrParams {
@@ -335,10 +361,40 @@ pub fn impl_zown(mut input: ZValueInput, config: ZOwnConfig) -> syn::Result<Toke
         zenoh_pico: &zenoh_pico,
         zenoh_pico_sys: &zenoh_pico_sys,
         zvalue_ty: &zvalue_ty,
+        fn_prefix: None,
     };
 
     tokens.extend(config.zvalue.attr_tokens(&attr_params)?);
     tokens.extend(config.zmove.attr_tokens(&attr_params)?);
+    tokens.extend(config.zdefault.attr_tokens(&attr_params)?);
+    tokens.extend(config.zloan.attr_tokens(&attr_params)?);
+
+    Ok(tokens)
+}
+
+pub fn zview(mut input: ZValueInput, config: ZViewConfig) -> syn::Result<TokenStream> {
+    let mut tokens = TokenStream::new();
+    let base = config.base;
+    let zenoh_pico = zenoh_pico_path()?;
+    let zenoh_pico_sys = zenoh_pico_sys_path()?;
+
+    let zvalue_ty = zvalue_type_path(
+        config.zvalue.as_ref(),
+        &ztype_ident("view", &base),
+        &zenoh_pico_sys,
+    )?;
+    tokens.extend(input.transform_struct(&zvalue_ty)?);
+
+    let attr_params = AttrParams {
+        base: &base,
+        input: &input,
+        zenoh_pico: &zenoh_pico,
+        zenoh_pico_sys: &zenoh_pico_sys,
+        zvalue_ty: &zvalue_ty,
+        fn_prefix: Some("view"),
+    };
+
+    tokens.extend(config.zvalue.attr_tokens(&attr_params)?);
     tokens.extend(config.zdefault.attr_tokens(&attr_params)?);
     tokens.extend(config.zloan.attr_tokens(&attr_params)?);
 
