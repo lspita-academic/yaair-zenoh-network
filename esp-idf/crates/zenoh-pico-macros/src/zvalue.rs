@@ -100,7 +100,7 @@ pub fn impl_zown(input: ZValueInput, config: ZOwnConfig) -> syn::Result<TokenStr
     let zenoh_pico_sys = zenoh_pico_sys_path()?;
     let name = config.name;
 
-    let zown_ty = path_or_sys_default_tokens(
+    let zvalue_ty = path_or_sys_default_tokens(
         config.ty,
         Some(format_ident!("z_owned_{name}_t")),
         &zenoh_pico_sys,
@@ -108,7 +108,7 @@ pub fn impl_zown(input: ZValueInput, config: ZOwnConfig) -> syn::Result<TokenStr
 
     match &mut input.data {
         syn::Data::Struct(struct_data) => {
-            struct_data.fields = Fields::Unnamed(syn::parse2(quote! {(#zown_ty)})?)
+            struct_data.fields = Fields::Unnamed(syn::parse2(quote! {(#zvalue_ty)})?)
         }
         _ => panic!("Expected unit struct"),
     };
@@ -119,14 +119,14 @@ pub fn impl_zown(input: ZValueInput, config: ZOwnConfig) -> syn::Result<TokenStr
     });
 
     let zvalue_trait: Path = parse_quote!(#zenoh_pico::zvalue::ZValue);
-    let zvalue_impl = derive::impl_signature(&input, Some(&quote! { #zvalue_trait<#zown_ty> }));
-    let from_impl = derive::impl_signature(&input, Some(&quote! { core::convert::From<#zown_ty> }));
+    let zvalue_impl = derive::impl_signature(&input, Some(&quote! { #zvalue_trait<#zvalue_ty> }));
+    let from_impl = derive::impl_signature(&input, Some(&quote! { core::convert::From<#zvalue_ty> }));
 
     tokens.extend(quote! {
         #zvalue_impl { }
 
         #from_impl {
-            fn from(value: #zown_ty) -> Self {
+            fn from(value: #zvalue_ty) -> Self {
                 Self(value)
             }
         }
@@ -146,7 +146,7 @@ pub fn impl_zown(input: ZValueInput, config: ZOwnConfig) -> syn::Result<TokenStr
 
     let zown_trait: Path = parse_quote!(#zenoh_pico::zvalue::ZOwn);
     let zown_impl =
-        derive::impl_signature(&input, Some(&quote! { #zown_trait<#zown_ty, #zmove_ty> }));
+        derive::impl_signature(&input, Some(&quote! { #zown_trait<#zvalue_ty, #zmove_ty> }));
 
     tokens.extend(quote! {
         #zown_impl {
@@ -203,7 +203,7 @@ pub fn impl_zown(input: ZValueInput, config: ZOwnConfig) -> syn::Result<TokenStr
 
         let zloan_trait: Path = parse_quote!(#zenoh_pico::zvalue::ZLoan);
         let zloan_impl =
-            derive::impl_signature(&input, Some(&quote! { #zloan_trait<#zown_ty, #zloan_ty> }));
+            derive::impl_signature(&input, Some(&quote! { #zloan_trait<#zvalue_ty, #zloan_ty> }));
 
         tokens.extend(quote! {
             #zloan_impl {
@@ -223,7 +223,7 @@ pub fn impl_zown(input: ZValueInput, config: ZOwnConfig) -> syn::Result<TokenStr
             let zloan_mut_trait: Path = parse_quote!(#zenoh_pico::zvalue::ZLoanMut);
             let zloan_mut_impl = derive::impl_signature(
                 &input,
-                Some(&quote! { #zloan_mut_trait<#zown_ty, #zloan_ty> }),
+                Some(&quote! { #zloan_mut_trait<#zvalue_ty, #zloan_ty> }),
             );
 
             tokens.extend(quote! {
