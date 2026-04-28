@@ -12,7 +12,7 @@ use zenoh_pico_core::{
 
 use crate::{
     locator::Locator,
-    result::{ZResult, ZenohError},
+    result::{ZResult, ZenohResult},
     sys::zp_config_insert,
     whatami::WhatAmIMask,
     zown,
@@ -57,7 +57,7 @@ pub struct ZenohConfig;
 pub struct ZenohConfigBuilder(ZenohConfig);
 
 impl ZenohConfigBuilder {
-    fn set<V: AsRef<str>>(mut self, key: ZenohConfigKey, value: V) -> Result<Self, ZenohError> {
+    fn set<V: AsRef<str>>(mut self, key: ZenohConfigKey, value: V) -> ZenohResult<Self> {
         let z_config = &mut self.0;
         let value_bytes = [value.as_ref().as_bytes(), &[0]].concat();
         let value_cstr = CStr::from_bytes_until_nul(value_bytes.as_slice()).unwrap();

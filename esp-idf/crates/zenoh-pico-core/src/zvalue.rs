@@ -1,17 +1,40 @@
 use std::fmt::Debug;
 
-pub trait ZValue<T: Default>: From<T> + Default + Debug {}
+use zenoh_pico_sys::z_closure_drop_callback_t;
 
-pub trait ZOwn<T: Default, M>: ZValue<T> {
-    fn zmove(self) -> *mut M;
+use crate::result::ZenohResult;
+
+pub trait CType: Default + Debug {}
+impl<T: Default + Debug> CType for T {}
+
+pub trait ZValue: From<Self::Value> + Debug {
+    type Value: CType;
 }
 
-pub trait ZView<T: Default>: ZValue<T> {}
+pub trait ZOwn: ZValue {
+    type MovedValue: CType;
 
-pub trait ZLoan<T: Default, L: Default>: ZValue<T> {
-    fn zloan(&self) -> *const L;
+    fn zmove(self) -> *mut Self::MovedValue;
 }
 
-pub trait ZLoanMut<T: Default, L: Default>: ZValue<T> {
-    fn zloan_mut(&mut self) -> *mut L;
+pub trait ZView: ZValue {}
+
+pub trait ZClosure: ZOwn {
+    type CallbackFn;
+
+    fn from_callback<T>(
+        callback: Self::CallbackFn,
+        drop: z_closure_drop_callback_t,
+        context: Option<&mut T>,
+    ) -> ZenohResult<Self>;
+}
+
+pub trait ZLoan: ZValue {
+    type LoanedValue: CType;
+
+    fn zloan(&self) -> *const Self::LoanedValue;
+}
+
+pub trait ZLoanMut: ZLoan {
+    fn zloan_mut(&mut self) -> *mut <Self as ZLoan>::LoanedValue;
 }

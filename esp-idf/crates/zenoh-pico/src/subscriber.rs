@@ -1,7 +1,6 @@
 use std::ffi::{CStr, c_void};
 
 use super::session::ZenohSession;
-use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, signal::Signal};
 use crate::sys::{
     _z_sample_t, z_bytes_to_string, z_closure_sample, z_closure_sample_callback_t,
     z_closure_sample_move, z_declare_subscriber, z_keyexpr_drop, z_keyexpr_from_str,
@@ -10,6 +9,7 @@ use crate::sys::{
     z_string_loan, z_subscriber_drop, z_subscriber_move, z_subscriber_options_default,
     z_subscriber_options_t,
 };
+use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, signal::Signal};
 
 pub struct ZenohSubscriber {
     pub(super) z_subscriber: z_owned_subscriber_t,
@@ -31,13 +31,18 @@ impl ZenohSubscriber {
 
         let mut z_subscriber = z_owned_subscriber_t::default();
         let mut options = z_subscriber_options_t::default();
+
+        let a = None::<&mut u32>
+            .map(|i| i as *mut _ as *mut c_void)
+            .unwrap_or(core::ptr::null_mut());
+
         unsafe {
             z_subscriber_options_default(&mut options);
             z_closure_sample(
                 &mut closure_sample,
                 callback,
                 None,
-                signal.as_mut() as *mut Signal<CriticalSectionRawMutex, String> as *mut c_void,
+                signal.as_mut() as *mut _ as *mut c_void,
             );
             z_keyexpr_from_str(&mut z_keyexpr, key_cstr.as_ptr());
             z_declare_subscriber(

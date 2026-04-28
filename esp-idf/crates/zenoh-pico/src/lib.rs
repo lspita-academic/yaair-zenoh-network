@@ -3,8 +3,9 @@
 pub mod config;
 pub mod keyexpr;
 pub mod locator;
+pub mod options;
 pub mod publisher;
-pub mod result;
+pub mod sample;
 pub mod session;
 pub mod subscriber;
 pub mod whatami;
