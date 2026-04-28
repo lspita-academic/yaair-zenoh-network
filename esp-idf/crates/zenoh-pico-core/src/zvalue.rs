@@ -1,4 +1,4 @@
-use std::fmt::Debug;
+use std::{ffi::c_void, fmt::Debug};
 
 use crate::{result::ZenohResult, sys::z_closure_drop_callback_t};
 
@@ -17,16 +17,6 @@ pub trait ZOwn: ZValue {
 
 pub trait ZView: ZValue {}
 
-pub trait ZClosure: ZOwn {
-    type CallbackFn;
-
-    fn from_callback<T>(
-        callback: Self::CallbackFn,
-        drop: z_closure_drop_callback_t,
-        context: Option<&mut T>,
-    ) -> ZenohResult<Self>;
-}
-
 pub trait ZLoan: ZValue {
     type LoanedValue: CType;
 
@@ -35,4 +25,15 @@ pub trait ZLoan: ZValue {
 
 pub trait ZLoanMut: ZLoan {
     fn zloan_mut(&mut self) -> *mut <Self as ZLoan>::LoanedValue;
+}
+
+pub trait ZClosure: ZOwn {
+    type CallbackValue;
+
+    fn from_callback<T>(
+        callback: unsafe extern "C" fn(*mut Self::CallbackValue, *mut c_void),
+        drop: z_closure_drop_callback_t,
+        context: Option<&mut T>,
+    ) -> ZenohResult<Self>;
+
 }

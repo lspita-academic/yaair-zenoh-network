@@ -276,7 +276,9 @@ impl AttrPaths for Option<ZMoveAttr> {
 
 impl AttrPaths for Option<ZDefaultAttr> {
     fn attr_paths(&self, attr_params: &AttrParams) -> syn::Result<TokenStream> {
-        let &AttrParams { input, zvalue_ty, .. } = attr_params;
+        let &AttrParams {
+            input, zvalue_ty, ..
+        } = attr_params;
 
         let zdefault_call = self.as_ref().and_then(|z| z.zfn.as_ref()).map(|zfn| {
             quote! {
@@ -363,6 +365,7 @@ impl AttrPaths for Option<ZLoanAttr> {
 impl AttrPaths for Option<ZCallbackAttr> {
     fn attr_paths(&self, attr_params: &AttrParams) -> syn::Result<TokenStream> {
         let &AttrParams {
+            base,
             input,
             zenoh_pico,
             zenoh_pico_sys,
@@ -372,12 +375,12 @@ impl AttrPaths for Option<ZCallbackAttr> {
 
         let zcallback_ty = path_or_sys_default(
             self.as_ref().and_then(|z| z.ty.as_ref()),
-            &format_ident!("z_{}_callback_t", attr_params.base),
+            &format_ident!("z_loaned_{}_t", base.strip_prefix("closure_").unwrap_or(base)),
             &zenoh_pico_sys,
         )?;
         let zcallback_fn = path_or_sys_default(
             self.as_ref().and_then(|z| z.zfn.as_ref()),
-            &format_ident!("z_{}", attr_params.base),
+            &format_ident!("z_{base}"),
             &zenoh_pico_sys,
         )?;
 
@@ -386,13 +389,14 @@ impl AttrPaths for Option<ZCallbackAttr> {
         let zenoh_result_ty: Path = parse_quote!(#zenoh_pico::result::ZenohResult);
         let zresult_trait: Path = parse_quote!(#zenoh_pico::result::ZResult);
         let zenoh_drop_ty: Path = parse_quote!(#zenoh_pico_sys::z_closure_drop_callback_t);
+        let cvoid_ty: Path = parse_quote!(::core::ffi::c_void);
 
         Ok(quote! {
             #zclosure_impl {
-                type CallbackFn = #zcallback_ty;
+                type CallbackValue = #zcallback_ty;
 
                 fn from_callback<T>(
-                    callback: Self::CallbackFn,
+                    callback: unsafe extern "C" fn(*mut Self::CallbackValue, *mut #cvoid_ty),
                     drop: #zenoh_drop_ty,
                     context: ::core::option::Option<&mut T>,
                 ) -> #zenoh_result_ty<Self> {
@@ -400,12 +404,12 @@ impl AttrPaths for Option<ZCallbackAttr> {
 
                     let mut closure = #zvalue_ty::default();
                     let context_ptr = context
-                        .map(|i| i as *mut _ as *mut ::core::ffi::c_void)
+                        .map(|i| i as *mut _ as *mut #cvoid_ty)
                         .unwrap_or(::core::ptr::null_mut());
                     unsafe {
                         #zcallback_fn(
                             &mut closure,
-                            callback,
+                            Some(callback),
                             drop,
                             context_ptr,
                         ).zresult(())?;
