@@ -2,11 +2,13 @@ use std::time::Duration;
 
 use embassy_executor::Spawner;
 use embassy_time::Timer;
-use esp_idf_svc::log::EspLogger;
 use esp_idf_platform::wifi::{Wifi, WifiConnection, config::WifiConfig};
+use esp_idf_svc::log::EspLogger;
 use static_cell::StaticCell;
 use zenoh_pico::{
-    config::{ZenohConfigBuilder, ZenohConfigMode}, locator::{Locator, LocatorProtocol}, session::ZenohSession
+    config::{ZenohConfigBuilder, ZenohConfigMode},
+    locator::{Locator, LocatorProtocol},
+    session::ZenohSession,
 };
 
 static ZENOH_SESSION: StaticCell<ZenohSession> = StaticCell::new();
@@ -19,7 +21,6 @@ async fn pong(zenoh_session: &'static ZenohSession) {
     let subscriber = zenoh_session.subscriber("ping/value");
 
     Timer::after_secs(2).await;
-    zenoh_session.print_peers_zid();
     let mut count = 0;
     loop {
         let pong = count.to_string();
@@ -67,6 +68,7 @@ async fn main(spawner: Spawner) {
         })
         .build();
 
-    let zenoh_session = ZENOH_SESSION.init(ZenohSession::open(zenoh_config, None));
+    let zenoh_session = ZENOH_SESSION
+        .init(ZenohSession::open(zenoh_config, None).expect("Failed to open zenoh session"));
     spawner.spawn(pong(zenoh_session).expect("Failed to spawn pong task"));
 }

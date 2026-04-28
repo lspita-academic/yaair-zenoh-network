@@ -5,11 +5,12 @@ use crate::sys::{
     _z_sample_t, z_bytes_to_string, z_closure_sample, z_closure_sample_callback_t,
     z_closure_sample_move, z_declare_subscriber, z_keyexpr_drop, z_keyexpr_from_str,
     z_keyexpr_loan, z_keyexpr_move, z_owned_closure_sample_t, z_owned_keyexpr_t, z_owned_string_t,
-    z_owned_subscriber_t, z_sample_payload, z_session_loan, z_string_data, z_string_len,
+    z_owned_subscriber_t, z_sample_payload, z_string_data, z_string_len,
     z_string_loan, z_subscriber_drop, z_subscriber_move, z_subscriber_options_default,
     z_subscriber_options_t,
 };
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, signal::Signal};
+use zenoh_pico_core::zvalue::ZLoan;
 
 pub struct ZenohSubscriber {
     pub(super) z_subscriber: z_owned_subscriber_t,
@@ -20,7 +21,6 @@ pub struct ZenohSubscriber {
 
 impl ZenohSubscriber {
     pub fn new(session: &ZenohSession, key: &str) -> Self {
-        let z_session = &session.z_session;
         let mut z_keyexpr = z_owned_keyexpr_t::default();
         let key_bytes = [key.as_bytes(), &[0]].concat();
         let key_cstr = CStr::from_bytes_until_nul(&key_bytes).unwrap();
@@ -32,10 +32,6 @@ impl ZenohSubscriber {
         let mut z_subscriber = z_owned_subscriber_t::default();
         let mut options = z_subscriber_options_t::default();
 
-        let a = None::<&mut u32>
-            .map(|i| i as *mut _ as *mut c_void)
-            .unwrap_or(core::ptr::null_mut());
-
         unsafe {
             z_subscriber_options_default(&mut options);
             z_closure_sample(
@@ -46,7 +42,7 @@ impl ZenohSubscriber {
             );
             z_keyexpr_from_str(&mut z_keyexpr, key_cstr.as_ptr());
             z_declare_subscriber(
-                z_session_loan(z_session),
+                session.zloan(),
                 &mut z_subscriber,
                 z_keyexpr_loan(&z_keyexpr),
                 z_closure_sample_move(&mut closure_sample),

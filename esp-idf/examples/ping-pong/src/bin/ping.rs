@@ -21,7 +21,6 @@ async fn ping(zenoh_session: &'static ZenohSession) {
     let subscriber = zenoh_session.subscriber("pong/value");
 
     Timer::after_secs(2).await;
-    zenoh_session.print_peers_zid();
     let mut count = 0;
     loop {
         let ping = count.to_string();
@@ -68,6 +67,7 @@ async fn main(spawner: Spawner) {
         })
         .build();
 
-    let zenoh_session = ZENOH_SESSION.init(ZenohSession::open(zenoh_config, None));
+    let zenoh_session =
+        ZENOH_SESSION.init(ZenohSession::open(zenoh_config, None).expect("Failed to open zenoh session"));
     spawner.spawn(ping(zenoh_session).expect("Failed to spawn ping task"));
 }
