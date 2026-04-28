@@ -1,8 +1,6 @@
 use std::fmt::Debug;
 
-use zenoh_pico_sys::z_closure_drop_callback_t;
-
-use crate::result::ZenohResult;
+use crate::{result::ZenohResult, sys::z_closure_drop_callback_t};
 
 pub trait CType: Default + Debug {}
 impl<T: Default + Debug> CType for T {}
