@@ -1,16 +1,16 @@
-use crate::sys::{_z_res_t_Z_OK, z_result_t};
+use zenoh_pico_sys::{_z_res_t_Z_OK, z_result_t};
 
 pub type ZenohError = i8;
 pub type ZenohResult<T> = Result<T, ZenohError>;
 
-pub trait ZResult<T> {
-    fn zresult(self, value: T) -> ZenohResult<T>;
+pub trait IntoZenohResult<T> {
+    fn into_zresult(self) -> ZenohResult<T>;
 }
 
-impl<T> ZResult<T> for z_result_t {
-    fn zresult(self, value: T) -> ZenohResult<T> {
+impl IntoZenohResult<()> for z_result_t {
+    fn into_zresult(self) -> ZenohResult<()> {
         if self as i32 == _z_res_t_Z_OK {
-            Ok(value)
+            Ok(())
         } else {
             Err(self)
         }

@@ -1,6 +1,4 @@
-use zenoh_pico_macros::zown;
-
-use crate::zclosure;
+use zenoh_pico_macros::{zclosure, zown};
 
 #[zown(base = "sample", zloan(mutable), ztake)]
 pub struct Sample;

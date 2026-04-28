@@ -1,8 +1,9 @@
 use std::{ffi::c_void, fmt::Debug};
 
 use embassy_sync::{blocking_mutex::raw::RawMutex, signal::Signal};
+use zenoh_pico_sys::z_closure_drop_callback_t;
 
-use crate::{result::ZenohResult, sys::z_closure_drop_callback_t};
+use crate::result::ZenohResult;
 
 pub trait CType: Default + Debug {}
 impl<T: Default + Debug> CType for T {}
@@ -44,11 +45,7 @@ pub trait ZClosure: ZOwn {
         signal: &mut Signal<M, Result<T, T::Error>>,
         drop: z_closure_drop_callback_t,
     ) -> ZenohResult<Self> {
-        Self::from_callback(
-            zclosure_signal_callback::<M, T>,
-            drop,
-            Some(signal),
-        )
+        Self::from_callback(zclosure_signal_callback::<M, T>, drop, Some(signal))
     }
 }
 

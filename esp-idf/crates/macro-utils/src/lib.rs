@@ -1,2 +1,2 @@
-pub mod krate;
 pub mod derive;
+pub mod krate;

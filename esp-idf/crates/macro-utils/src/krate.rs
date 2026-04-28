@@ -12,7 +12,7 @@ pub fn crate_path(name: &str) -> syn::Result<Path> {
         FoundCrate::Name(name) => {
             let ident = Ident::new(&name, span);
             parse_quote!(::#ident)
-        },
+        }
     };
     Ok(crate_path)
 }

@@ -1,10 +1,10 @@
 use std::fmt::Display;
 
-use crate::sys::{
+use strum::{EnumCount, EnumIter, IntoEnumIterator};
+use zenoh_pico_core::sys::{
     z_whatami_t, z_whatami_t_Z_WHATAMI_CLIENT, z_whatami_t_Z_WHATAMI_PEER,
     z_whatami_t_Z_WHATAMI_ROUTER,
 };
-use strum::{EnumCount, EnumIter, IntoEnumIterator};
 
 #[derive(Debug, Default, Eq, PartialEq, EnumCount, EnumIter)]
 pub enum WhatAmI {

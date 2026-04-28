@@ -1,9 +1,11 @@
 use std::{ffi::CString, str::FromStr};
 
 use ffi_utils::cstring::CStringExtensions;
-use zenoh_pico_core::sys::z_keyexpr_from_str;
-
-use crate::{result::{ZResult, ZenohError}, zown};
+use zenoh_pico_core::{
+    result::{IntoZenohResult, ZenohError},
+    sys::z_keyexpr_from_str_autocanonize,
+};
+use zenoh_pico_macros::zown;
 
 #[zown(base = "keyexpr", zloan(mutable))]
 pub struct KeyExpr;
@@ -15,7 +17,7 @@ impl FromStr for KeyExpr {
         let value = CString::from_vec_maybe_nul(s);
         let mut keyexpr = Default::default();
         unsafe {
-            z_keyexpr_from_str(&mut keyexpr, value.as_ptr()).zresult(())?;
+            z_keyexpr_from_str_autocanonize(&mut keyexpr, value.as_ptr()).into_zresult()?;
         }
         Ok(Self::from(keyexpr))
     }

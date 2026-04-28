@@ -67,7 +67,7 @@ async fn main(spawner: Spawner) {
         })
         .build();
 
-    let zenoh_session =
-        ZENOH_SESSION.init(ZenohSession::open(zenoh_config, None).expect("Failed to open zenoh session"));
+    let zenoh_session = ZENOH_SESSION
+        .init(ZenohSession::open(zenoh_config, None).expect("Failed to open zenoh session"));
     spawner.spawn(ping(zenoh_session).expect("Failed to spawn ping task"));
 }

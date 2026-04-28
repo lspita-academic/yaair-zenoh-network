@@ -2,21 +2,18 @@ use std::{ffi::CStr, time::Duration};
 
 use strum::{Display, EnumString};
 use zenoh_pico_core::{
+    result::{IntoZenohResult, ZenohResult},
     sys::{
         Z_CONFIG_CONNECT_KEY, Z_CONFIG_LISTEN_KEY, Z_CONFIG_MODE_KEY,
         Z_CONFIG_MULTICAST_LOCATOR_KEY, Z_CONFIG_MULTICAST_SCOUTING_KEY,
         Z_CONFIG_SCOUTING_TIMEOUT_KEY, Z_CONFIG_SCOUTING_WHAT_KEY, z_config_default,
+        zp_config_insert,
     },
     zvalue::ZLoanMut,
 };
+use zenoh_pico_macros::zown;
 
-use crate::{
-    locator::Locator,
-    result::{ZResult, ZenohResult},
-    sys::zp_config_insert,
-    whatami::WhatAmIMask,
-    zown,
-};
+use crate::{locator::Locator, whatami::WhatAmIMask};
 
 #[derive(Debug, Default, EnumString, Display)]
 #[strum(serialize_all = "snake_case")]
@@ -61,8 +58,11 @@ impl ZenohConfigBuilder {
         let z_config = &mut self.0;
         let value_bytes = [value.as_ref().as_bytes(), &[0]].concat();
         let value_cstr = CStr::from_bytes_until_nul(value_bytes.as_slice()).unwrap();
-        unsafe { zp_config_insert(z_config.zloan_mut(), key.num_key(), value_cstr.as_ptr()) }
-            .zresult(self)
+        unsafe {
+            zp_config_insert(z_config.zloan_mut(), key.num_key(), value_cstr.as_ptr())
+                .into_zresult()?;
+        }
+        Ok(self)
     }
 
     pub fn mode(self, mode: &ZenohConfigMode) -> Self {

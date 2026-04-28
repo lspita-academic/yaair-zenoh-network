@@ -394,7 +394,7 @@ impl AttrPaths for Option<ZTakeAttr> {
         let ztake_impl = &input.impl_signature(Some(&ztake_trait.to_token_stream()));
         let zloan_trait: Path = parse_quote!(#zenoh_pico::zvalue::ZLoan);
         let zenoh_error_ty: Path = parse_quote!(#zenoh_pico::result::ZenohError);
-        let zresult_trait: Path = parse_quote!(#zenoh_pico::result::ZResult);
+        let zresult_trait: Path = parse_quote!(#zenoh_pico::result::IntoZenohResult);
         let try_from_impl = &input.impl_signature(Some(
             &quote! { ::core::convert::TryFrom<*mut <Self as #zloan_trait>::LoanedValue> },
         ));
@@ -410,7 +410,7 @@ impl AttrPaths for Option<ZTakeAttr> {
 
                     let mut zvalue = #zvalue_ty::default();
                     unsafe {
-                        #ztake_fn(&mut zvalue, value).zresult(())?;
+                        #ztake_fn(&mut zvalue, value).into_zresult()?;
                     }
                     ::core::result::Result::Ok(Self::from(zvalue))
                 }
@@ -447,7 +447,7 @@ impl AttrPaths for Option<ZCallbackAttr> {
         let zclosure_trait: Path = parse_quote!(#zenoh_pico::zvalue::ZClosure);
         let zclosure_impl = &input.impl_signature(Some(&zclosure_trait.to_token_stream()));
         let zenoh_result_ty: Path = parse_quote!(#zenoh_pico::result::ZenohResult);
-        let zresult_trait: Path = parse_quote!(#zenoh_pico::result::ZResult);
+        let zresult_trait: Path = parse_quote!(#zenoh_pico::result::IntoZenohResult);
         let zenoh_drop_ty: Path = parse_quote!(#zenoh_pico_sys::z_closure_drop_callback_t);
         let cvoid_ty: Path = parse_quote!(::core::ffi::c_void);
 
@@ -472,7 +472,7 @@ impl AttrPaths for Option<ZCallbackAttr> {
                             Some(callback),
                             drop,
                             context_ptr,
-                        ).zresult(())?;
+                        ).into_zresult()?;
                     }
                     #zenoh_result_ty::Ok(Self::from(closure))
                 }

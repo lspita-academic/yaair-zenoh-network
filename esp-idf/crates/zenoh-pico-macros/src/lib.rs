@@ -1,11 +1,10 @@
+mod zvalue;
+
 use proc_macro::TokenStream;
 use quote::quote;
 use syn::{Path, parse_macro_input};
 
-mod zvalue;
-use zvalue::ZOwnConfig;
-
-use crate::zvalue::{ZClosureConfig, ZValueInput, ZViewConfig};
+use crate::zvalue::{ZClosureConfig, ZOwnConfig, ZValueInput, ZViewConfig};
 
 pub(crate) fn zenoh_pico_path() -> syn::Result<Path> {
     macro_utils::krate::crate_path("zenoh-pico")
