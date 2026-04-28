@@ -35,5 +35,4 @@ pub trait ZClosure: ZOwn {
         drop: z_closure_drop_callback_t,
         context: Option<&mut T>,
     ) -> ZenohResult<Self>;
-
 }
