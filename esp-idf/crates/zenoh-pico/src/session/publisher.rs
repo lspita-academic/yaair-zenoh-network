@@ -1,63 +1,46 @@
-use std::ffi::CStr;
+use zenoh_pico_core::{
+    result::{IntoZenohResult, ZenohResult},
+    sys::{
+        z_declare_publisher, z_publisher_options_default, z_publisher_options_t,
+        z_undeclare_publisher,
+    },
+    zvalue::ZLoan,
+};
+use zenoh_pico_macros::zown;
 
-use crate::session::ZenohSession;
+use crate::{
+    keyexpr::KeyExpr,
+    options::{ZDefaultFn, ZOptionsDefault},
+    session::Session,
+};
 
-pub struct ZenohPublisher {
-    pub(super) z_publisher: z_owned_publisher_t,
-    pub(super) z_keyexpr: z_owned_keyexpr_t,
-    key: String,
+impl ZDefaultFn for z_publisher_options_t {
+    fn zdefault_fn() -> unsafe extern "C" fn(*mut Self) {
+        z_publisher_options_default
+    }
 }
 
-impl ZenohPublisher {
-    pub fn new(session: &ZenohSession, key: &str) -> Self {
-        let mut z_keyexpr = z_owned_keyexpr_t::default();
-        let key_bytes = [key.as_bytes(), &[0]].concat();
-        let key_cstr = CStr::from_bytes_until_nul(&key_bytes).unwrap();
+#[zown(base = "publisher", zmove(drop_zfn = z_undeclare_publisher), zloan(mutable))]
+pub struct Publisher;
 
-        let mut z_publisher = z_owned_publisher_t::default();
-        let mut options = z_publisher_options_t::default();
+impl Publisher {
+    pub fn declare(
+        session: &Session,
+        key: &KeyExpr,
+        publisher_options: Option<z_publisher_options_t>,
+    ) -> ZenohResult<Self> {
+        let publisher_options = publisher_options.unwrap_or_else(ZOptionsDefault::options_default);
+        let mut publisher = Default::default();
         unsafe {
-            z_publisher_options_default(&mut options);
-            z_keyexpr_from_str(&mut z_keyexpr, key_cstr.as_ptr());
             z_declare_publisher(
                 session.zloan(),
-                &mut z_publisher,
-                z_keyexpr_loan(&z_keyexpr),
-                &options,
-            );
+                &mut publisher,
+                key.zloan(),
+                &publisher_options,
+            )
+            .into_zresult()?;
         };
-        Self {
-            z_publisher,
-            z_keyexpr,
-            key: key.to_owned(),
-        }
-    }
 
-    pub fn put(&self, value: &str) {
-        let value_bytes = [value.as_bytes(), &[0]].concat();
-        let value_cstr = CStr::from_bytes_until_nul(&value_bytes).unwrap();
-        let mut value_z_string = z_owned_string_t::default();
-        let mut value_z_bytes = z_owned_bytes_t::default();
-        let mut options = z_publisher_put_options_t::default();
-        log::info!("Publishing on {}: {}", self.key, value);
-        unsafe {
-            z_publisher_put_options_default(&mut options);
-            z_string_copy_from_str(&mut value_z_string, value_cstr.as_ptr());
-            z_bytes_from_string(&mut value_z_bytes, z_string_move(&mut value_z_string));
-            z_publisher_put(
-                z_publisher_loan(&self.z_publisher),
-                z_bytes_move(&mut value_z_bytes),
-                &options,
-            );
-        }
-    }
-}
-
-impl Drop for ZenohPublisher {
-    fn drop(&mut self) {
-        unsafe {
-            z_keyexpr_drop(z_keyexpr_move(&mut self.z_keyexpr));
-            z_publisher_drop(z_publisher_move(&mut self.z_publisher));
-        }
+        Ok(Self::from(publisher))
     }
 }

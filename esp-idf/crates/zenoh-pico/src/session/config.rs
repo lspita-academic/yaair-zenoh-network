@@ -13,7 +13,7 @@ use zenoh_pico_core::{
 };
 use zenoh_pico_macros::zown;
 
-use crate::{locator::Locator, whatami::WhatAmIMask};
+use crate::session::{locator::Locator, whatami::WhatAmIMask};
 
 #[derive(Debug, Default, EnumString, Display)]
 #[strum(serialize_all = "snake_case")]

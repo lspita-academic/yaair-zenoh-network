@@ -8,14 +8,14 @@ use static_cell::StaticCell;
 use zenoh_pico::{
     config::{ZenohConfigBuilder, ZenohConfigMode},
     locator::{Locator, LocatorProtocol},
-    session::ZenohSession,
+    session::Session,
 };
 
-static ZENOH_SESSION: StaticCell<ZenohSession> = StaticCell::new();
+static ZENOH_SESSION: StaticCell<Session> = StaticCell::new();
 static WIFI: StaticCell<WifiConnection<'static>> = StaticCell::new();
 
 #[embassy_executor::task]
-async fn pong(zenoh_session: &'static ZenohSession) {
+async fn pong(zenoh_session: &'static Session) {
     log::info!("Starting pong task");
     let publisher = zenoh_session.publisher("pong/value");
     let subscriber = zenoh_session.subscriber("ping/value");
@@ -69,6 +69,6 @@ async fn main(spawner: Spawner) {
         .build();
 
     let zenoh_session = ZENOH_SESSION
-        .init(ZenohSession::open(zenoh_config, None).expect("Failed to open zenoh session"));
+        .init(Session::open(zenoh_config, None).expect("Failed to open zenoh session"));
     spawner.spawn(pong(zenoh_session).expect("Failed to spawn pong task"));
 }

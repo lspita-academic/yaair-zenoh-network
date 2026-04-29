@@ -1,21 +1,24 @@
+pub mod config;
+pub mod locator;
 pub mod publisher;
 pub mod subscriber;
+pub mod whatami;
 
 use zenoh_pico_core::{
     sys::{
         z_close, z_open, z_open_options_default, z_open_options_t, z_owned_session_t,
-        z_session_is_closed, z_session_loan_mut, zp_start_lease_task, zp_start_read_task,
+        z_publisher_options_t, z_session_is_closed, z_session_loan_mut, zp_start_lease_task,
+        zp_start_read_task,
     },
     zvalue::{ZLoan, ZLoanMut, ZOwn},
 };
 use zenoh_pico_macros::zown;
 
 use crate::{
-    config::ZenohConfig,
     keyexpr::KeyExpr,
     options::{ZDefaultFn, ZOptionsDefault},
     result::{IntoZenohResult, ZenohResult},
-    session::subscriber::Subscriber,
+    session::{config::ZenohConfig, publisher::Publisher, subscriber::Subscriber},
 };
 
 impl ZDefaultFn for z_open_options_t {
@@ -25,27 +28,27 @@ impl ZDefaultFn for z_open_options_t {
 }
 
 #[zown(base = "session", zloan(mutable))]
-pub struct ZenohSession;
+pub struct Session;
 
-impl ZenohSession {
+impl Session {
     pub fn open(config: ZenohConfig, open_options: Option<z_open_options_t>) -> ZenohResult<Self> {
-        let mut zsession = z_owned_session_t::default();
         let open_options = open_options.unwrap_or_else(ZOptionsDefault::options_default);
+        let mut session = z_owned_session_t::default();
         unsafe {
-            z_open(&mut zsession, config.zmove(), &open_options).into_zresult()?;
+            z_open(&mut session, config.zmove(), &open_options).into_zresult()?;
         }
         unsafe {
             // not done automatically, even if it should be because of the default options
-            zp_start_read_task(z_session_loan_mut(&mut zsession), std::ptr::null());
-            zp_start_lease_task(z_session_loan_mut(&mut zsession), std::ptr::null());
+            zp_start_read_task(z_session_loan_mut(&mut session), std::ptr::null());
+            zp_start_lease_task(z_session_loan_mut(&mut session), std::ptr::null());
         }
 
-        Ok(Self::from(zsession))
+        Ok(Self::from(session))
     }
 
     pub fn close(mut self) {
         let session_closed = unsafe { z_session_is_closed(self.zloan()) };
-        if !session_closed {
+        if session_closed {
             return;
         }
         let close_options = std::ptr::null(); // dummy struct
@@ -54,8 +57,12 @@ impl ZenohSession {
         }
     }
 
-    pub fn publisher(&self, key: &str) -> ZenohPublisher {
-        ZenohPublisher::new(self, key)
+    pub fn publisher(
+        &self,
+        key: &KeyExpr,
+        publisher_options: Option<z_publisher_options_t>,
+    ) -> ZenohResult<Publisher> {
+        Publisher::declare(self, key, publisher_options)
     }
 
     pub fn subscriber(&self, key: &KeyExpr) -> ZenohResult<Subscriber> {

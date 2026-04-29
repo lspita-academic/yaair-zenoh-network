@@ -15,6 +15,7 @@ impl FromStr for KeyExpr {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let value = CString::from_vec_maybe_nul(s);
+
         let mut keyexpr = Default::default();
         unsafe {
             z_keyexpr_from_str_autocanonize(&mut keyexpr, value.as_ptr()).into_zresult()?;

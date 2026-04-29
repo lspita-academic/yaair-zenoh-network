@@ -57,6 +57,14 @@ struct ZCallbackAttr {
 
 #[derive(FromMeta)]
 #[darling(derive_syn_parse)]
+pub struct ZWrapConfig {
+    base: String,
+    #[darling(default)]
+    zvalue: Option<ZValueAttr>,
+}
+
+#[derive(FromMeta)]
+#[darling(derive_syn_parse)]
 pub struct ZOwnConfig {
     base: String,
     #[darling(default)]
@@ -69,18 +77,6 @@ pub struct ZOwnConfig {
     zloan: Option<ZLoanAttr>,
     #[darling(default)]
     ztake: Option<ZTakeAttr>,
-}
-
-#[derive(FromMeta)]
-#[darling(derive_syn_parse)]
-pub struct ZViewConfig {
-    base: String,
-    #[darling(default)]
-    zvalue: Option<ZValueAttr>,
-    #[darling(default)]
-    zdefault: Option<ZDefaultAttr>,
-    #[darling(default)]
-    zloan: Option<ZLoanAttr>,
 }
 
 #[derive(FromMeta)]
@@ -133,11 +129,12 @@ impl ZValueInput {
             syn::Data::Struct(struct_data) => {
                 struct_data.fields = Fields::Unnamed(syn::parse2(quote! {(#zvalue_ty)})?)
             }
-            _ => panic!("Expected unit struct"),
+            _ => unreachable!("ZValueInput guarantees unit struct"),
         };
 
         Ok(quote! {
             #[derive(Debug)]
+            #[repr(transparent)]
             #self
         })
     }
@@ -218,15 +215,38 @@ impl AttrPaths for Option<ZValueAttr> {
         let zvalue_trait: Path = parse_quote!(#zenoh_pico::zvalue::ZValue);
         let zvalue_impl = &input.impl_signature(Some(&zvalue_trait.to_token_stream()));
         let from_impl = &input.impl_signature(Some(&quote! { ::core::convert::From<#zvalue_ty> }));
+        let deref_impl = &input.impl_signature(Some(&quote! { ::core::ops::Deref }));
+        let deref_mut_impl = &input.impl_signature(Some(&quote! { ::core::ops::DerefMut }));
 
         Ok(quote! {
             #zvalue_impl {
                 type Value = #zvalue_ty;
+
+                unsafe fn from_raw<'a>(ptr: *const Self::Value) -> &'a Self {
+                    &*(ptr as *const Self)
+                }
+                unsafe fn from_raw_mut<'a>(ptr: *mut Self::Value) -> &'a mut Self {
+                    &mut *(ptr as *mut Self)
+                }
             }
 
             #from_impl {
                 fn from(value: #zvalue_ty) -> Self {
                     Self(value)
+                }
+            }
+
+            #deref_impl {
+                type Target = #zvalue_ty;
+
+                fn deref(&self) -> &Self::Target {
+                    &self.0
+                }
+            }
+
+            #deref_mut_impl {
+                fn deref_mut(&mut self) -> &mut Self::Target {
+                    &mut self.0
                 }
             }
         })
@@ -285,24 +305,26 @@ impl AttrPaths for Option<ZMoveAttr> {
 impl AttrPaths for Option<ZDefaultAttr> {
     fn attr_paths(&self, attr_params: &AttrParams) -> syn::Result<TokenStream> {
         let &AttrParams {
-            input, zvalue_ty, ..
+            input, zenoh_pico, ..
         } = attr_params;
 
-        let zdefault_call = self.as_ref().and_then(|z| z.zfn.as_ref()).map(|zfn| {
-            quote! {
-                unsafe {
-                    #zfn(&mut zvalue);
-                }
-            }
-        });
+        let zdefault_fn = self.as_ref().and_then(|z| z.zfn.as_ref());
+        let zvalue_trait: Path = parse_quote!(#zenoh_pico::zvalue::ZValue);
         let default_impl = &input.impl_signature(Some(&quote! { ::core::default::Default }));
+        let zdefault_closure = zdefault_fn
+            .map(|zfn| {
+                quote! {
+                    |value| unsafe { #zfn(value); }
+                }
+            })
+            .unwrap_or(quote! {
+                |_| {}
+            });
 
         Ok(quote! {
             #default_impl {
                 fn default() -> Self {
-                    let mut zvalue = #zvalue_ty::default();
-                    #zdefault_call
-                    Self::from(zvalue)
+                    <Self as #zvalue_trait>::initialize(#zdefault_closure)
                 }
             }
         })
@@ -376,7 +398,6 @@ impl AttrPaths for Option<ZTakeAttr> {
             input,
             zenoh_pico,
             zenoh_pico_sys,
-            zvalue_ty,
             ..
         } = attr_params;
 
@@ -392,6 +413,7 @@ impl AttrPaths for Option<ZTakeAttr> {
 
         let ztake_trait: Path = parse_quote!(#zenoh_pico::zvalue::ZTake);
         let ztake_impl = &input.impl_signature(Some(&ztake_trait.to_token_stream()));
+        let zvalue_trait: Path = parse_quote!(#zenoh_pico::zvalue::ZValue);
         let zloan_trait: Path = parse_quote!(#zenoh_pico::zvalue::ZLoan);
         let zenoh_error_ty: Path = parse_quote!(#zenoh_pico::result::ZenohError);
         let zresult_trait: Path = parse_quote!(#zenoh_pico::result::IntoZenohResult);
@@ -408,11 +430,9 @@ impl AttrPaths for Option<ZTakeAttr> {
                 fn try_from(value: *mut <Self as #zloan_trait>::LoanedValue) -> ::core::result::Result<Self, Self::Error> {
                     use #zresult_trait as _;
 
-                    let mut zvalue = #zvalue_ty::default();
-                    unsafe {
-                        #ztake_fn(&mut zvalue, value).into_zresult()?;
-                    }
-                    ::core::result::Result::Ok(Self::from(zvalue))
+                    <Self as #zvalue_trait>::try_initialize(|zval| unsafe {
+                        #ztake_fn(zval, value).into_zresult()
+                    })
                 }
             }
         })
@@ -445,6 +465,7 @@ impl AttrPaths for Option<ZCallbackAttr> {
         )?;
 
         let zclosure_trait: Path = parse_quote!(#zenoh_pico::zvalue::ZClosure);
+        let zvalue_trait: Path = parse_quote!(#zenoh_pico::zvalue::ZValue);
         let zclosure_impl = &input.impl_signature(Some(&zclosure_trait.to_token_stream()));
         let zenoh_result_ty: Path = parse_quote!(#zenoh_pico::result::ZenohResult);
         let zresult_trait: Path = parse_quote!(#zenoh_pico::result::IntoZenohResult);
@@ -466,19 +487,46 @@ impl AttrPaths for Option<ZCallbackAttr> {
                     let context_ptr = context
                         .map(|i| i as *mut _ as *mut #cvoid_ty)
                         .unwrap_or(::core::ptr::null_mut());
-                    unsafe {
+
+                    <Self as #zvalue_trait>::try_initialize(|zval| unsafe {
                         #zcallback_fn(
-                            &mut closure,
+                            zval,
                             Some(callback),
                             drop,
                             context_ptr,
-                        ).into_zresult()?;
-                    }
-                    #zenoh_result_ty::Ok(Self::from(closure))
+                        ).into_zresult()
+                    })
                 }
             }
         })
     }
+}
+
+pub fn zwrap(mut input: ZValueInput, config: ZWrapConfig) -> syn::Result<TokenStream> {
+    let mut tokens = TokenStream::new();
+    let base = config.base;
+    let zenoh_pico = zenoh_pico_path()?;
+    let zenoh_pico_sys = zenoh_pico_sys_path()?;
+
+    let zvalue_ty = zvalue_type_path(
+        config.zvalue.as_ref(),
+        &format_ident!("z_{base}_t"),
+        &zenoh_pico_sys,
+    )?;
+    tokens.extend(input.transform_struct(&zvalue_ty)?);
+
+    let attr_params = AttrParams {
+        base: &base,
+        input: &input,
+        zenoh_pico: &zenoh_pico,
+        zenoh_pico_sys: &zenoh_pico_sys,
+        zvalue_ty: &zvalue_ty,
+        fn_prefix: None,
+    };
+
+    tokens.extend(config.zvalue.attr_paths(&attr_params)?);
+
+    Ok(tokens)
 }
 
 pub fn zown(mut input: ZValueInput, config: ZOwnConfig) -> syn::Result<TokenStream> {
@@ -508,35 +556,6 @@ pub fn zown(mut input: ZValueInput, config: ZOwnConfig) -> syn::Result<TokenStre
     tokens.extend(config.zdefault.attr_paths(&attr_params)?);
     tokens.extend(config.zloan.attr_paths(&attr_params)?);
     tokens.extend(config.ztake.attr_paths(&attr_params)?);
-
-    Ok(tokens)
-}
-
-pub fn zview(mut input: ZValueInput, config: ZViewConfig) -> syn::Result<TokenStream> {
-    let mut tokens = TokenStream::new();
-    let base = config.base;
-    let zenoh_pico = zenoh_pico_path()?;
-    let zenoh_pico_sys = zenoh_pico_sys_path()?;
-
-    let zvalue_ty = zvalue_type_path(
-        config.zvalue.as_ref(),
-        &ztype_ident("view", &base),
-        &zenoh_pico_sys,
-    )?;
-    tokens.extend(input.transform_struct(&zvalue_ty)?);
-
-    let attr_params = AttrParams {
-        base: &base,
-        input: &input,
-        zenoh_pico: &zenoh_pico,
-        zenoh_pico_sys: &zenoh_pico_sys,
-        zvalue_ty: &zvalue_ty,
-        fn_prefix: Some("view"),
-    };
-
-    tokens.extend(config.zvalue.attr_paths(&attr_params)?);
-    tokens.extend(config.zdefault.attr_paths(&attr_params)?);
-    tokens.extend(config.zloan.attr_paths(&attr_params)?);
 
     Ok(tokens)
 }

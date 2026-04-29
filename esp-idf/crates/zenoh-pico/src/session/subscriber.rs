@@ -9,7 +9,7 @@ use zenoh_pico_macros::zown;
 use crate::{
     keyexpr::KeyExpr,
     sample::{Sample, SampleClosure},
-    session::ZenohSession,
+    session::Session,
 };
 
 #[zown(base = "subscriber", zmove(drop_zfn = z_undeclare_subscriber), zloan(mutable))]
@@ -26,7 +26,7 @@ pub struct Subscriber {
 }
 
 impl Subscriber {
-    pub fn declare(session: &ZenohSession, key: &KeyExpr) -> ZenohResult<Self> {
+    pub fn declare(session: &Session, key: &KeyExpr) -> ZenohResult<Self> {
         let mut signal = Signal::new();
         let sample_closure = SampleClosure::from_signal(&mut signal, None)?;
 

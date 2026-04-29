@@ -1,10 +1,10 @@
-pub mod config;
 pub mod keyexpr;
-pub mod locator;
 pub mod options;
 pub mod sample;
 pub mod session;
-pub mod whatami;
+pub mod timestamp;
+pub mod zbytes;
+pub mod zid;
 pub mod zstring;
 
 pub use zenoh_pico_core::*;
