@@ -40,7 +40,7 @@ impl<'a> Wifi<'a> {
         config: &WifiConfig,
     ) -> Result<WifiConnection<'a>, EspError> {
         let wifi = &mut self.0;
-        wifi.set_configuration(config.esp_value())?;
+        wifi.set_configuration(config)?;
         wifi.start().await?;
         log::info!("Wifi started");
 

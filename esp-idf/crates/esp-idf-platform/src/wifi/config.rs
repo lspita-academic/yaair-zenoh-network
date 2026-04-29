@@ -1,3 +1,5 @@
+use std::ops::Deref;
+
 use esp_idf_svc::wifi::{ClientConfiguration, Configuration};
 use heapless::CapacityError;
 use thiserror::Error;
@@ -20,6 +22,15 @@ pub enum WifiConfigError {
     PasswordTooLong(CapacityError),
 }
 
+impl Deref for WifiConfig {
+    type Target = Configuration;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+// required use of a macro because option_env! expects a literal
 macro_rules! option_env_with_err {
     ($name:literal) => {
         option_env!($name).ok_or(WifiConfigError::MissingEnvVar($name.to_owned()))
@@ -41,9 +52,5 @@ impl WifiConfig {
             })
             .into(),
         ))
-    }
-
-    pub(super) fn esp_value(&self) -> &Configuration {
-        &self.0
     }
 }
