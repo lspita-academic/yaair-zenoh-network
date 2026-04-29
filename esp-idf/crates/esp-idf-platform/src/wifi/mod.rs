@@ -1,3 +1,5 @@
+use std::ops::{Deref, DerefMut};
+
 // https://github.com/esp-rs/esp-idf-svc/blob/master/examples/wifi_async.rs
 use esp_idf_svc::{
     eventloop::EspSystemEventLoop,
@@ -23,6 +25,20 @@ impl<'a> From<WifiImpl<'a>> for Wifi<'a> {
     }
 }
 
+impl<'a> Deref for Wifi<'a> {
+    type Target = WifiImpl<'a>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+impl DerefMut for Wifi<'_>  {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        &mut self.0
+    }
+}
+
 impl<'a> Wifi<'a> {
     pub fn new() -> Result<Self, EspError> {
         let peripherals = Peripherals::take()?;
@@ -36,40 +52,30 @@ impl<'a> Wifi<'a> {
     }
 
     pub async fn connect_with_config(
-        mut self,
+        &mut self,
         config: &WifiConfig,
-    ) -> Result<WifiConnection<'a>, EspError> {
-        let wifi = &mut self.0;
-        wifi.set_configuration(config)?;
-        wifi.start().await?;
+    ) -> Result<WifiConnection<'a, '_>, EspError> {
+        self.set_configuration(config)?;
+        self.start().await?;
         log::info!("Wifi started");
 
-        wifi.connect().await?;
+        self.connect().await?;
         log::info!("Wifi connected");
 
-        wifi.wait_netif_up().await?;
+        self.wait_netif_up().await?;
         log::info!("Wifi netif up");
         Ok(WifiConnection(self))
     }
-
-    fn esp_value(&self) -> &WifiImpl<'a> {
-        &self.0
-    }
-
-    fn esp_value_mut(&mut self) -> &mut WifiImpl<'a> {
-        &mut self.0
-    }
 }
 
-pub struct WifiConnection<'a>(Wifi<'a>);
+pub struct WifiConnection<'a, 'b>(&'b mut Wifi<'a>);
 
-impl<'a> WifiConnection<'a> {
-    pub async fn disconnect(mut self) -> Result<Wifi<'a>, EspError> {
-        self.0.esp_value_mut().disconnect().await?;
-        Ok(self.0)
+impl<'a> WifiConnection<'a, '_> {
+    pub async fn disconnect(self) -> Result<(), EspError> {
+        self.0.disconnect().await
     }
 
     pub fn netif(&self) -> &EspNetif {
-        self.0.esp_value().wifi().sta_netif()
+        self.0.wifi().sta_netif()
     }
 }
