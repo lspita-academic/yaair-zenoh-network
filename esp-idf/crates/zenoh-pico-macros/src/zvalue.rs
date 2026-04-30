@@ -476,11 +476,7 @@ impl ZWrapAttrTokens for ZTakeAttr {
 
 impl ZWrapAttrTokens for ZClosureAttr {
     fn to_tokens(&self, input: &ZWrapInput, params: &ZWrapParams) -> syn::Result<TokenStream> {
-        let &ZWrapParams {
-            zenoh_pico,
-            zenoh_pico_sys,
-            ..
-        } = &params;
+        let &ZWrapParams { zenoh_pico, .. } = &params;
 
         let callback_ty = params.path_or_sys_default(
             self.callback_ty.as_ref(),
@@ -506,7 +502,7 @@ impl ZWrapAttrTokens for ZClosureAttr {
         let zclosure_impl = &input.impl_signature(Some(&zclosure_trait.to_token_stream()));
         let zenoh_result_ty: Path = parse_quote!(#zenoh_pico::result::ZenohResult);
         let zresult_trait: Path = parse_quote!(#zenoh_pico::result::IntoZenohResult);
-        let zenoh_drop_ty: Path = parse_quote!(#zenoh_pico_sys::z_closure_drop_callback_t);
+        let arc_ty: Path = parse_quote!(::std::sync::Arc);
         let cvoid_ty: Path = parse_quote!(::core::ffi::c_void);
 
         Ok(quote! {
@@ -515,14 +511,21 @@ impl ZWrapAttrTokens for ZClosureAttr {
 
                 fn from_callback<T>(
                     callback: unsafe extern "C" fn(*mut Self::CallbackValue, *mut #cvoid_ty),
-                    drop: #zenoh_drop_ty,
-                    context: ::core::option::Option<&mut T>,
+                    context: ::core::option::Option<#arc_ty<T>>,
                 ) -> #zenoh_result_ty<Self> {
                     use #zresult_trait as _;
 
+                    // Rc reference for the closure to ensure it lives the whole time.
+                    // Atomic because zenoh could use multiple threads.
                     let context_ptr = context
-                        .map(|i| i as *mut _ as *mut #cvoid_ty)
-                        .unwrap_or(::core::ptr::null_mut());
+                            .map(|arc| #arc_ty::into_raw(arc) as *mut #cvoid_ty)
+                            .unwrap_or(std::ptr::null_mut());
+
+                    unsafe extern "C" fn drop_context<T>(ptr: *mut #cvoid_ty) {
+                        if !ptr.is_null() {
+                            drop(#arc_ty::<T>::from_raw(ptr as *const T));
+                        }
+                    }
 
                     let mut value = <Self as #zvalue_trait>::uninitialized();
                     <Self as #zown_trait>
@@ -532,7 +535,7 @@ impl ZWrapAttrTokens for ZClosureAttr {
                                 #init_zfn(
                                     z,
                                     Some(callback),
-                                    drop,
+                                    Some(drop_context::<T>),
                                     context_ptr,
                                 ).into_zresult()
                             },

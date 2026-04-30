@@ -1,5 +1,8 @@
+use std::{iter, mem::MaybeUninit};
+
 use zenoh_pico_core::{
-    sys::{z_bytes_copy_from_buf, z_bytes_empty},
+    result::ZenohError,
+    sys::{z_bytes_copy_from_buf, z_bytes_empty, z_bytes_get_reader, z_bytes_reader_read},
     zvalue::{ZOwn, ZValue},
 };
 use zenoh_pico_macros::zwrap;
@@ -47,8 +50,20 @@ impl IntoZBytes for &[u8] {
     }
 }
 
-impl IntoZBytes for &str {
-    fn into_zbytes(self) -> ZBytes {
-        ZBytes::from(self.as_bytes())
+impl FromZBytes for Vec<u8> {
+    type Error = ZenohError;
+
+    fn from_zbytes(bytes: &ZBytes) -> Result<Self, Self::Error> {
+        let mut reader = unsafe { z_bytes_get_reader(bytes.zloan()) };
+        Ok(iter::from_fn(move || {
+            let mut b = MaybeUninit::uninit();
+            let bytes_read = unsafe { z_bytes_reader_read(&mut reader, b.as_mut_ptr(), 1) };
+            if bytes_read > 0 {
+                Some(unsafe { b.assume_init() })
+            } else {
+                None
+            }
+        })
+        .collect())
     }
 }

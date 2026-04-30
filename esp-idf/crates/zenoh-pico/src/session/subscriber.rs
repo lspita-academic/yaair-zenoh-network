@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, signal::Signal};
 use zenoh_pico_core::{
     result::{IntoZenohResult, ZenohResult},
@@ -22,13 +24,13 @@ pub struct Subscriber {
     /// fields cannot be moved out and consumed because of the shared reference,
     /// it would require reimplementing what the zown macro does manually.
     _subscriber: InternalSubscriber,
-    signal: Signal<CriticalSectionRawMutex, ZenohResult<Sample>>,
+    signal: Arc<Signal<CriticalSectionRawMutex, ZenohResult<Sample>>>,
 }
 
 impl Subscriber {
     pub fn declare(session: &Session, key: &KeyExpr) -> ZenohResult<Self> {
-        let mut signal = Signal::new();
-        let sample_closure = SampleClosure::from_signal(&mut signal, None)?;
+        let signal = Arc::new(Signal::new());
+        let sample_closure = SampleClosure::from_signal(signal.clone())?;
 
         let subscriber_options = std::ptr::null(); // dummy struct
         let mut subscriber = Default::default();

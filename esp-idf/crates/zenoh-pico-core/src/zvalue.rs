@@ -1,7 +1,6 @@
-use std::{error::Error, ffi::c_void, fmt::Debug};
+use std::{error::Error, ffi::c_void, fmt::Debug, sync::Arc};
 
 use embassy_sync::{blocking_mutex::raw::RawMutex, signal::Signal};
-use zenoh_pico_sys::z_closure_drop_callback_t;
 
 use crate::result::ZenohResult;
 
@@ -46,23 +45,21 @@ pub trait ZClosure: ZOwn {
 
     fn from_callback<T>(
         callback: unsafe extern "C" fn(*mut Self::CallbackValue, *mut c_void),
-        drop: z_closure_drop_callback_t,
-        context: Option<&mut T>,
+        context: Option<Arc<T>>,
     ) -> ZenohResult<Self>;
 
     fn from_signal<M: RawMutex, T: ZTake<Value = Self::CallbackValue>>(
-        signal: &mut Signal<M, Result<T, T::Error>>,
-        drop: z_closure_drop_callback_t,
+        signal: Arc<Signal<M, Result<T, T::Error>>>,
     ) -> ZenohResult<Self> {
-        Self::from_callback(zclosure_signal_callback::<M, T>, drop, Some(signal))
-    }
-}
+        unsafe extern "C" fn zclosure_signal_callback<M: RawMutex, T: ZTake>(
+            value: *mut T::Value,
+            context: *mut c_void,
+        ) {
+            let signal = unsafe { &mut *(context as *mut Signal<M, Result<T, T::Error>>) };
+            let value = T::ztake(value);
+            signal.signal(value);
+        }
 
-unsafe extern "C" fn zclosure_signal_callback<M: RawMutex, T: ZTake>(
-    value: *mut T::Value,
-    context: *mut c_void,
-) {
-    let signal = unsafe { &mut *(context as *mut Signal<M, Result<T, T::Error>>) };
-    let value = T::ztake(value);
-    signal.signal(value);
+        Self::from_callback(zclosure_signal_callback::<M, T>, Some(signal))
+    }
 }
