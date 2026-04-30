@@ -1,6 +1,7 @@
 use std::{ffi::CString, time::Duration};
 
 use ffi_utils::cstring::CStringExtensions;
+use num_enum::{IntoPrimitive, TryFromPrimitive, UnsafeFromPrimitive};
 use strum::{Display, EnumString};
 use zenoh_pico_core::{
     result::{IntoZenohResult, ZenohResult},
@@ -24,27 +25,21 @@ pub enum ZenohConfigMode {
     Peer,
 }
 
+#[derive(IntoPrimitive, TryFromPrimitive, UnsafeFromPrimitive)]
+#[repr(u32)]
 pub enum ZenohConfigKey {
-    ConfigMode,
-    Connect,
-    Listen,
-    ScoutingTimeout,
-    MulticastScouting,
-    MulticastLocator,
-    ScoutingMask,
+    ConfigMode = Z_CONFIG_MODE_KEY,
+    Connect = Z_CONFIG_CONNECT_KEY,
+    Listen = Z_CONFIG_LISTEN_KEY,
+    ScoutingTimeout = Z_CONFIG_SCOUTING_TIMEOUT_KEY,
+    MulticastScouting = Z_CONFIG_MULTICAST_SCOUTING_KEY,
+    MulticastLocator = Z_CONFIG_MULTICAST_LOCATOR_KEY,
+    ScoutingMask = Z_CONFIG_SCOUTING_WHAT_KEY,
 }
 
-impl ZenohConfigKey {
-    pub fn num_key(&self) -> u8 {
-        (match self {
-            Self::ConfigMode => Z_CONFIG_MODE_KEY,
-            Self::Connect => Z_CONFIG_CONNECT_KEY,
-            Self::Listen => Z_CONFIG_LISTEN_KEY,
-            Self::ScoutingTimeout => Z_CONFIG_SCOUTING_TIMEOUT_KEY,
-            Self::MulticastScouting => Z_CONFIG_MULTICAST_SCOUTING_KEY,
-            Self::MulticastLocator => Z_CONFIG_MULTICAST_LOCATOR_KEY,
-            Self::ScoutingMask => Z_CONFIG_SCOUTING_WHAT_KEY,
-        }) as u8
+impl Into<u8> for ZenohConfigKey {
+    fn into(self) -> u8 {
+        Into::<u32>::into(self) as u8
     }
 }
 
@@ -64,7 +59,7 @@ impl ZenohConfigBuilder {
     fn set<V: AsRef<str>>(mut self, key: ZenohConfigKey, value: V) -> ZenohResult<Self> {
         let value_cstring = CString::from_vec_maybe_nul(value.as_ref());
         unsafe {
-            zp_config_insert(self.0.zloan_mut(), key.num_key(), value_cstring.as_ptr())
+            zp_config_insert(self.0.zloan_mut(), key.into(), value_cstring.as_ptr())
                 .into_zresult()?;
         }
         Ok(self)

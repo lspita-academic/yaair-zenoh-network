@@ -31,6 +31,7 @@ heapless = "0.9"
 itertools = "0.14.0"
 log = "0.4"
 macro-utils = { path = "crates/macro-utils" }
+num_enum = "0.7"
 proc-macro-crate = "3.5"
 proc-macro2 = "1.0"
 quote = "1.0"

@@ -1,15 +1,21 @@
 use std::ptr::NonNull;
 
 use ffi_utils::pointer::NonNullExtensions;
+use num_enum::{IntoPrimitive, TryFromPrimitive, UnsafeFromPrimitive};
 use zenoh_pico_core::{
     sys::{
-        z_sample_attachment, z_sample_encoding, z_sample_keyexpr, z_sample_kind, z_sample_kind_t, z_sample_kind_t_Z_SAMPLE_KIND_DELETE, z_sample_kind_t_Z_SAMPLE_KIND_PUT, z_sample_payload, z_sample_timestamp
+        z_sample_attachment, z_sample_encoding, z_sample_keyexpr, z_sample_kind,
+        z_sample_kind_t_Z_SAMPLE_KIND_DELETE, z_sample_kind_t_Z_SAMPLE_KIND_PUT, z_sample_payload,
+        z_sample_priority, z_sample_timestamp,
     },
     zvalue::ZValue,
 };
 use zenoh_pico_macros::zwrap;
 
-use crate::{encoding::Encoding, keyexpr::KeyExpr, timestamp::Timestamp, zbytes::ZBytes};
+use crate::{
+    encoding::Encoding, keyexpr::KeyExpr, session::publisher::MessagePriority,
+    timestamp::Timestamp, zbytes::ZBytes,
+};
 
 #[zwrap(base(name = "sample"), zvalue, zown, ztake)]
 pub struct Sample;
@@ -17,20 +23,17 @@ pub struct Sample;
 #[zwrap(base(name = "closure_sample"), zvalue, zown, zclosure)]
 pub struct SampleClosure;
 
+#[derive(IntoPrimitive, TryFromPrimitive, UnsafeFromPrimitive, Default)]
+#[repr(u32)]
 pub enum SampleKind {
-    PUT,
-    DELETE,
+    #[default]
+    PUT = z_sample_kind_t_Z_SAMPLE_KIND_PUT,
+    DELETE = z_sample_kind_t_Z_SAMPLE_KIND_DELETE,
 }
 
 impl Sample {
     pub fn kind(&self) -> SampleKind {
-        let zkind: z_sample_kind_t = unsafe { z_sample_kind(self.zloan()) };
-        match zkind {
-            #![allow(non_upper_case_globals)]
-            z_sample_kind_t_Z_SAMPLE_KIND_PUT => SampleKind::PUT,
-            z_sample_kind_t_Z_SAMPLE_KIND_DELETE => SampleKind::DELETE,
-            _ => unreachable!("bindgen converts enum to generic u32"),
-        }
+        unsafe { SampleKind::unchecked_transmute_from(z_sample_kind(self.zloan())) }
     }
 
     pub fn timestamp(&self) -> Option<&Timestamp> {
@@ -53,5 +56,9 @@ impl Sample {
 
     pub fn keyexpr(&self) -> &KeyExpr {
         KeyExpr::from_ptr(unsafe { z_sample_keyexpr(self.zloan()) })
+    }
+
+    pub fn priority(&self) -> MessagePriority {
+        unsafe { MessagePriority::unchecked_transmute_from(z_sample_priority(self.zloan())) }
     }
 }

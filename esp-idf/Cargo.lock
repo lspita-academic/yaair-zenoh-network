@@ -2343,6 +2343,7 @@ dependencies = [
  "embassy-sync 0.8.0",
  "ffi-utils",
  "log",
+ "num_enum",
  "strum 0.28.0",
  "uhlc",
  "zenoh-pico-core",

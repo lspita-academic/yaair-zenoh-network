@@ -33,10 +33,7 @@ impl ZOptionsInit for z_open_options_t {
 pub struct Session;
 
 impl Session {
-    pub fn open(
-        config: ZenohConfig,
-        open_options: Option<z_open_options_t>,
-    ) -> ZenohResult<Self> {
+    pub fn open(config: ZenohConfig, open_options: Option<z_open_options_t>) -> ZenohResult<Self> {
         let open_options = open_options.unwrap_or_else(ZOptionsDefault::zdefault);
         let mut session = z_owned_session_t::default();
         unsafe {
