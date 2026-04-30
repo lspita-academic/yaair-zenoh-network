@@ -4,17 +4,20 @@ use ffi_utils::pointer::NonNullExtensions;
 use num_enum::{IntoPrimitive, TryFromPrimitive, UnsafeFromPrimitive};
 use zenoh_pico_core::{
     sys::{
-        z_sample_attachment, z_sample_encoding, z_sample_keyexpr, z_sample_kind,
-        z_sample_kind_t_Z_SAMPLE_KIND_DELETE, z_sample_kind_t_Z_SAMPLE_KIND_PUT, z_sample_payload,
-        z_sample_priority, z_sample_timestamp,
+        z_sample_attachment, z_sample_congestion_control, z_sample_encoding, z_sample_express,
+        z_sample_keyexpr, z_sample_kind, z_sample_kind_t_Z_SAMPLE_KIND_DELETE,
+        z_sample_kind_t_Z_SAMPLE_KIND_PUT, z_sample_payload, z_sample_priority, z_sample_timestamp,
     },
     zvalue::ZValue,
 };
 use zenoh_pico_macros::zwrap;
 
 use crate::{
-    encoding::Encoding, keyexpr::KeyExpr, session::publisher::MessagePriority,
-    timestamp::Timestamp, zbytes::ZBytes,
+    encoding::Encoding,
+    keyexpr::KeyExpr,
+    session::publisher::{CongestionControl, MessagePriority},
+    timestamp::Timestamp,
+    zbytes::ZBytes,
 };
 
 #[zwrap(base(name = "sample"), zvalue, zown, ztake)]
@@ -32,10 +35,6 @@ pub enum SampleKind {
 }
 
 impl Sample {
-    pub fn kind(&self) -> SampleKind {
-        unsafe { SampleKind::unchecked_transmute_from(z_sample_kind(self.zloan())) }
-    }
-
     pub fn timestamp(&self) -> Option<&Timestamp> {
         NonNull::from_ptr(unsafe { z_sample_timestamp(self.zloan()) })
             .map(|nn| Timestamp::from_ptr(nn.as_ptr()))
@@ -60,5 +59,19 @@ impl Sample {
 
     pub fn priority(&self) -> MessagePriority {
         unsafe { MessagePriority::unchecked_transmute_from(z_sample_priority(self.zloan())) }
+    }
+
+    pub fn congestion_control(&self) -> CongestionControl {
+        unsafe {
+            CongestionControl::unchecked_transmute_from(z_sample_congestion_control(self.zloan()))
+        }
+    }
+
+    pub fn is_express(&self) -> bool {
+        unsafe { z_sample_express(self.zloan()) }
+    }
+
+    pub fn kind(&self) -> SampleKind {
+        unsafe { SampleKind::unchecked_transmute_from(z_sample_kind(self.zloan())) }
     }
 }
