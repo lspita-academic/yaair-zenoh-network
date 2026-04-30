@@ -4,7 +4,7 @@ use ffi_utils::pointer::NonNullExtensions;
 use zenoh_pico_core::{
     sys::{
         z_sample_attachment, z_sample_encoding, z_sample_kind, z_sample_kind_t,
-        z_sample_kind_t_Z_SAMPLE_KIND_DELETE, z_sample_kind_t_Z_SAMPLE_KIND_PUT,
+        z_sample_kind_t_Z_SAMPLE_KIND_DELETE, z_sample_kind_t_Z_SAMPLE_KIND_PUT, z_sample_payload,
         z_sample_timestamp,
     },
     zvalue::ZValue,
@@ -47,5 +47,9 @@ impl Sample {
 
     pub fn encoding(&self) -> &Encoding {
         Encoding::from_ptr(unsafe { z_sample_encoding(self.zloan()) })
+    }
+
+    pub fn payload(&self) -> &ZBytes {
+        ZBytes::from_ptr(unsafe { z_sample_payload(self.zloan()) })
     }
 }
