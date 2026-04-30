@@ -2,9 +2,9 @@ use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, signal::Signal}
 use zenoh_pico_core::{
     result::{IntoZenohResult, ZenohResult},
     sys::{z_declare_subscriber, z_undeclare_subscriber},
-    zvalue::{ZClosure, ZLoan, ZOwn},
+    zvalue::{ZClosure, ZOwn, ZValue},
 };
-use zenoh_pico_macros::zown;
+use zenoh_pico_macros::zwrap;
 
 use crate::{
     keyexpr::KeyExpr,
@@ -12,7 +12,7 @@ use crate::{
     session::Session,
 };
 
-#[zown(base = "subscriber", zmove(drop_zfn = z_undeclare_subscriber), zloan(mutable))]
+#[zwrap(base(name = "subscriber"), zvalue, zown(drop_zfn = z_undeclare_subscriber))]
 struct InternalSubscriber;
 
 pub struct Subscriber {

@@ -1,5 +1,6 @@
-use std::{ffi::CStr, time::Duration};
+use std::{ffi::CString, time::Duration};
 
+use ffi_utils::cstring::CStringExtensions;
 use strum::{Display, EnumString};
 use zenoh_pico_core::{
     result::{IntoZenohResult, ZenohResult},
@@ -9,9 +10,9 @@ use zenoh_pico_core::{
         Z_CONFIG_SCOUTING_TIMEOUT_KEY, Z_CONFIG_SCOUTING_WHAT_KEY, z_config_default,
         zp_config_insert,
     },
-    zvalue::ZLoanMut,
+    zvalue::{ZOwn, ZValue},
 };
-use zenoh_pico_macros::zown;
+use zenoh_pico_macros::zwrap;
 
 use crate::session::{locator::Locator, whatami::WhatAmIMask};
 
@@ -47,60 +48,57 @@ impl ZenohConfigKey {
     }
 }
 
-#[zown(base = "config", zdefault(zfn = z_config_default), zloan(mutable))]
+#[zwrap(base(name = "config"), zvalue, zown)]
 pub struct ZenohConfig;
 
-#[derive(Default)]
 pub struct ZenohConfigBuilder(ZenohConfig);
 
 impl ZenohConfigBuilder {
+    pub fn new() -> ZenohResult<Self> {
+        let mut config = ZenohConfig::uninitialized();
+        config
+            .inspect_zowned_mut(|z| unsafe { z_config_default(z).into_zresult() })
+            .map(|_| Self(config))
+    }
+
     fn set<V: AsRef<str>>(mut self, key: ZenohConfigKey, value: V) -> ZenohResult<Self> {
-        let z_config = &mut self.0;
-        let value_bytes = [value.as_ref().as_bytes(), &[0]].concat();
-        let value_cstr = CStr::from_bytes_until_nul(value_bytes.as_slice()).unwrap();
+        let value_cstring = CString::from_vec_maybe_nul(value.as_ref());
         unsafe {
-            zp_config_insert(z_config.zloan_mut(), key.num_key(), value_cstr.as_ptr())
+            zp_config_insert(self.0.zloan_mut(), key.num_key(), value_cstring.as_ptr())
                 .into_zresult()?;
         }
         Ok(self)
     }
 
-    pub fn mode(self, mode: &ZenohConfigMode) -> Self {
+    pub fn mode(self, mode: &ZenohConfigMode) -> ZenohResult<Self> {
         self.set(ZenohConfigKey::ConfigMode, mode.to_string())
-            .unwrap()
     }
 
-    pub fn connect(self, locator: &Locator) -> Self {
+    pub fn connect(self, locator: &Locator) -> ZenohResult<Self> {
         self.set(ZenohConfigKey::Connect, locator.to_string())
-            .unwrap()
     }
 
-    pub fn listen(self, locator: &Locator) -> Self {
+    pub fn listen(self, locator: &Locator) -> ZenohResult<Self> {
         self.set(ZenohConfigKey::Listen, locator.to_string())
-            .unwrap()
     }
 
-    pub fn scouting_timeout(self, timeout: &Duration) -> Self {
+    pub fn scouting_timeout(self, timeout: &Duration) -> ZenohResult<Self> {
         self.set(
             ZenohConfigKey::ScoutingTimeout,
             timeout.as_millis().to_string(),
         )
-        .unwrap()
     }
 
-    pub fn multicast_scouting(self, enable: bool) -> Self {
+    pub fn multicast_scouting(self, enable: bool) -> ZenohResult<Self> {
         self.set(ZenohConfigKey::MulticastScouting, enable.to_string())
-            .unwrap()
     }
 
-    pub fn multicast_locator(self, locator: &Locator) -> Self {
+    pub fn multicast_locator(self, locator: &Locator) -> ZenohResult<Self> {
         self.set(ZenohConfigKey::MulticastLocator, locator.to_string())
-            .unwrap()
     }
 
-    pub fn scouting_mask(self, what_mask: &WhatAmIMask) -> Self {
+    pub fn scouting_mask(self, what_mask: &WhatAmIMask) -> ZenohResult<Self> {
         self.set(ZenohConfigKey::ScoutingMask, what_mask.to_string())
-            .unwrap()
     }
 
     pub fn build(self) -> ZenohConfig {

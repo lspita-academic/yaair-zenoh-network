@@ -1,19 +1,21 @@
 use std::ptr::NonNull;
 
+use ffi_utils::pointer::NonNullExtensions;
 use zenoh_pico_core::{
     sys::{
-        z_sample_attachment, z_sample_kind, z_sample_kind_t, z_sample_kind_t_Z_SAMPLE_KIND_DELETE, z_sample_kind_t_Z_SAMPLE_KIND_PUT, z_sample_timestamp
+        z_sample_attachment, z_sample_kind, z_sample_kind_t, z_sample_kind_t_Z_SAMPLE_KIND_DELETE,
+        z_sample_kind_t_Z_SAMPLE_KIND_PUT, z_sample_timestamp,
     },
-    zvalue::{ZLoan, ZValue},
+    zvalue::ZValue,
 };
-use zenoh_pico_macros::{zclosure, zown};
+use zenoh_pico_macros::zwrap;
 
 use crate::{timestamp::Timestamp, zbytes::ZBytes};
 
-#[zown(base = "sample", zloan(mutable), ztake)]
+#[zwrap(base(name = "sample"), zvalue, zown, ztake)]
 pub struct Sample;
 
-#[zclosure(base = "sample", zloan)]
+#[zwrap(base(name = "closure_sample"), zvalue, zown, zclosure)]
 pub struct SampleClosure;
 
 pub enum SampleKind {
@@ -33,12 +35,12 @@ impl Sample {
     }
 
     pub fn timestamp(&self) -> Option<&Timestamp> {
-        NonNull::new(unsafe { z_sample_timestamp(self.zloan()) } as *mut _)
-            .map(|nn| unsafe { Timestamp::from_raw(nn.as_ptr()) })
+        NonNull::from_ptr(unsafe { z_sample_timestamp(self.zloan()) })
+            .map(|nn| Timestamp::from_raw(nn.as_ptr()))
     }
 
     pub fn attachment(&self) -> Option<&ZBytes> {
-        NonNull::new(unsafe { z_sample_attachment(self.zloan()) } as *mut _)
-            .map(|nn| unsafe { ZBytes::from_raw(nn.as_ptr()) })
+        NonNull::from_ptr(unsafe { z_sample_attachment(self.zloan()) })
+            .map(|nn| ZBytes::from_raw(nn.as_ptr()))
     }
 }

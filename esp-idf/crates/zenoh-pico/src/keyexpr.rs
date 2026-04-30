@@ -1,25 +1,24 @@
-use std::{ffi::CString, str::FromStr};
+use std::str::FromStr;
 
-use ffi_utils::cstring::CStringExtensions;
 use zenoh_pico_core::{
     result::{IntoZenohResult, ZenohError},
-    sys::z_keyexpr_from_str_autocanonize,
+    sys::{_z_declared_keyexpr_t, z_keyexpr_from_substr_autocanonize},
+    zvalue::{ZOwn, ZValue},
 };
-use zenoh_pico_macros::zown;
+use zenoh_pico_macros::zwrap;
 
-#[zown(base = "keyexpr", zloan(mutable))]
+#[zwrap(base(name = "keyexpr"), zvalue(value_ty = _z_declared_keyexpr_t), zown)]
 pub struct KeyExpr;
 
 impl FromStr for KeyExpr {
     type Err = ZenohError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let value = CString::from_vec_maybe_nul(s);
-
-        let mut keyexpr = Default::default();
-        unsafe {
-            z_keyexpr_from_str_autocanonize(&mut keyexpr, value.as_ptr()).into_zresult()?;
-        }
-        Ok(Self::from(keyexpr))
+        let mut value = Self::uninitialized();
+        value
+            .inspect_zowned_mut(|z| unsafe {
+                z_keyexpr_from_substr_autocanonize(z, s.as_ptr(), &mut s.len()).into_zresult()
+            })
+            .map(|_| value)
     }
 }

@@ -4,23 +4,25 @@ use zenoh_pico_core::{
         z_declare_publisher, z_publisher_options_default, z_publisher_options_t,
         z_undeclare_publisher,
     },
-    zvalue::ZLoan,
+    zvalue::ZValue,
 };
-use zenoh_pico_macros::zown;
+use zenoh_pico_macros::zwrap;
 
 use crate::{
     keyexpr::KeyExpr,
-    options::{ZDefaultFn, ZOptionsDefault},
     session::Session,
+    zoptions::{ZOptionsDefault, ZOptionsInit},
 };
 
-impl ZDefaultFn for z_publisher_options_t {
-    fn zdefault_fn() -> unsafe extern "C" fn(*mut Self) {
-        z_publisher_options_default
+impl ZOptionsInit for z_publisher_options_t {
+    fn zinit(&mut self) {
+        unsafe {
+            z_publisher_options_default(self);
+        }
     }
 }
 
-#[zown(base = "publisher", zmove(drop_zfn = z_undeclare_publisher), zloan(mutable))]
+#[zwrap(base(name = "publisher"), zvalue, zown(drop_zfn = z_undeclare_publisher))]
 pub struct Publisher;
 
 impl Publisher {
@@ -29,7 +31,7 @@ impl Publisher {
         key: &KeyExpr,
         publisher_options: Option<z_publisher_options_t>,
     ) -> ZenohResult<Self> {
-        let publisher_options = publisher_options.unwrap_or_else(ZOptionsDefault::options_default);
+        let publisher_options = publisher_options.unwrap_or_else(ZOptionsDefault::zdefault);
         let mut publisher = Default::default();
         unsafe {
             z_declare_publisher(

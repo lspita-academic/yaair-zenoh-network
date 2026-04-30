@@ -1,59 +1,45 @@
-use std::{ffi::c_void, fmt::Debug, ops::DerefMut};
+use std::{error::Error, ffi::c_void, fmt::Debug};
 
 use embassy_sync::{blocking_mutex::raw::RawMutex, signal::Signal};
 use zenoh_pico_sys::z_closure_drop_callback_t;
 
 use crate::result::ZenohResult;
 
-pub trait CType: Default + Debug {}
-impl<T: Default + Debug> CType for T {}
+pub trait CType: Default + Debug + Copy + Clone + Sized {}
+impl<T: Default + Debug + Copy + Clone> CType for T {}
 
-pub trait ZValue: From<Self::Value> + Debug + DerefMut {
+pub trait ZValue: Sized {
     type Value: CType;
 
-    unsafe fn from_raw<'a>(ptr: *const Self::Value) -> &'a Self;
-    unsafe fn from_raw_mut<'a>(ptr: *mut Self::Value) -> &'a mut Self;
-
-    fn try_initialize<I, E>(initializer: I) -> Result<Self, E>
-    where
-        I: FnOnce(&mut Self::Value) -> Result<(), E>,
-    {
-        let mut zval = Self::Value::default();
-        initializer(&mut zval)?;
-        Ok(Self::from(zval))
-    }
-
-    fn initialize<I>(initializer: I) -> Self
-    where
-        I: FnOnce(&mut Self::Value),
-    {
-        Self::try_initialize(|value| {
-            initializer(value);
-            Result::<_, ()>::Ok(())
-        })
-        .unwrap()
-    }
+    fn uninitialized() -> Self;
+    fn from_zvalue(value: Self::Value) -> Self;
+    fn from_raw<'a>(ptr: *const Self::Value) -> &'a Self;
+    fn from_raw_mut<'a>(ptr: *mut Self::Value) -> &'a mut Self;
+    fn zloan(&self) -> *const Self::Value;
+    fn zloan_mut(&mut self) -> *mut Self::Value;
 }
 
 pub trait ZOwn: ZValue {
     type OwnedValue: CType;
     type MovedValue: CType;
 
-    fn zowned(&mut self) -> *mut Self::OwnedValue;
+    fn inspect_zowned<F, T>(&self, f: F) -> T
+    where
+        F: FnOnce(&Self::OwnedValue) -> T;
+
+    fn inspect_zowned_mut<F, T>(&mut self, f: F) -> T
+    where
+        F: FnOnce(&mut Self::OwnedValue) -> T;
+    fn from_zowned(value: Self::OwnedValue) -> Self;
     fn zmove(self) -> *mut Self::MovedValue;
+    fn zdrop(&mut self);
 }
 
-pub trait ZLoan: ZValue {
-    type LoanedValue: CType;
+pub trait ZTake: ZOwn {
+    type Error: Error;
 
-    fn zloan(&self) -> *const Self::LoanedValue;
+    fn ztake(loan_mut: *mut Self::Value) -> Result<Self, Self::Error>;
 }
-
-pub trait ZLoanMut: ZLoan {
-    fn zloan_mut(&mut self) -> *mut <Self as ZLoan>::LoanedValue;
-}
-
-pub trait ZTake: ZOwn + ZLoanMut + TryFrom<*mut <Self as ZLoan>::LoanedValue> {}
 
 pub trait ZClosure: ZOwn {
     type CallbackValue: CType;
@@ -64,7 +50,7 @@ pub trait ZClosure: ZOwn {
         context: Option<&mut T>,
     ) -> ZenohResult<Self>;
 
-    fn from_signal<M: RawMutex, T: ZTake<LoanedValue = Self::CallbackValue>>(
+    fn from_signal<M: RawMutex, T: ZTake<Value = Self::CallbackValue>>(
         signal: &mut Signal<M, Result<T, T::Error>>,
         drop: z_closure_drop_callback_t,
     ) -> ZenohResult<Self> {
@@ -73,10 +59,10 @@ pub trait ZClosure: ZOwn {
 }
 
 unsafe extern "C" fn zclosure_signal_callback<M: RawMutex, T: ZTake>(
-    value: *mut T::LoanedValue,
+    value: *mut T::Value,
     context: *mut c_void,
 ) {
     let signal = unsafe { &mut *(context as *mut Signal<M, Result<T, T::Error>>) };
-    let value = T::try_from(value);
+    let value = T::ztake(value);
     signal.signal(value);
 }

@@ -1,5 +1,5 @@
 pub mod keyexpr;
-pub mod options;
+pub mod zoptions;
 pub mod sample;
 pub mod session;
 pub mod timestamp;

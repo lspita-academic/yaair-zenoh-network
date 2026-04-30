@@ -6,23 +6,24 @@ use std::{
 
 use zenoh_pico_core::{
     result::{IntoZenohResult, ZenohError},
-    sys::{z_string_copy_from_substr, z_string_data, z_string_empty},
-    zvalue::ZLoan,
+    sys::{z_string_copy_from_substr, z_string_data},
+    zvalue::{ZOwn, ZValue},
 };
-use zenoh_pico_macros::zown;
+use zenoh_pico_macros::zwrap;
 
-#[zown(base = "string", zdefault(zfn = z_string_empty), zloan(mutable))]
+#[zwrap(base(name = "string"), zvalue, zown)]
 pub struct ZString;
 
 impl FromStr for ZString {
     type Err = ZenohError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let mut zstring = Default::default();
-        unsafe {
-            z_string_copy_from_substr(&mut zstring, s.as_ptr(), s.len()).into_zresult()?;
-        }
-        Ok(Self::from(zstring))
+        let mut zstring = Self::uninitialized();
+        zstring
+            .inspect_zowned_mut(|z| unsafe {
+                z_string_copy_from_substr(z, s.as_ptr(), s.len()).into_zresult()
+            })
+            .map(|_| zstring)
     }
 }
 

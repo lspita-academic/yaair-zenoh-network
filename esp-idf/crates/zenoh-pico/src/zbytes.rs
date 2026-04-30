@@ -1,8 +1,19 @@
-use zenoh_pico_core::sys::{z_bytes_copy_from_buf, z_bytes_empty};
-use zenoh_pico_macros::zown;
+use zenoh_pico_core::{
+    sys::{z_bytes_copy_from_buf, z_bytes_empty},
+    zvalue::{ZOwn, ZValue},
+};
+use zenoh_pico_macros::zwrap;
 
-#[zown(base = "bytes", zloan(mutable), zdefault(zfn = z_bytes_empty))]
+#[zwrap(base(name = "bytes"), zvalue, zown)]
 pub struct ZBytes;
+
+impl Default for ZBytes {
+    fn default() -> Self {
+        let mut value = Self::uninitialized();
+        value.inspect_zowned_mut(|z| unsafe { z_bytes_empty(z) });
+        value
+    }
+}
 
 pub trait IntoZBytes {
     fn into_zbytes(self) -> ZBytes;

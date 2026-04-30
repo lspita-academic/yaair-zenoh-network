@@ -10,29 +10,34 @@ use zenoh_pico_core::{
         z_publisher_options_t, z_session_is_closed, z_session_loan_mut, zp_start_lease_task,
         zp_start_read_task,
     },
-    zvalue::{ZLoan, ZLoanMut, ZOwn},
+    zvalue::{ZOwn, ZValue},
 };
-use zenoh_pico_macros::zown;
+use zenoh_pico_macros::zwrap;
 
 use crate::{
     keyexpr::KeyExpr,
-    options::{ZDefaultFn, ZOptionsDefault},
     result::{IntoZenohResult, ZenohResult},
     session::{config::ZenohConfig, publisher::Publisher, subscriber::Subscriber},
+    zoptions::{ZOptionsDefault, ZOptionsInit},
 };
 
-impl ZDefaultFn for z_open_options_t {
-    fn zdefault_fn() -> unsafe extern "C" fn(*mut Self) {
-        z_open_options_default
+impl ZOptionsInit for z_open_options_t {
+    fn zinit(&mut self) {
+        unsafe {
+            z_open_options_default(self);
+        }
     }
 }
 
-#[zown(base = "session", zloan(mutable))]
+#[zwrap(base(name = "session", family = "rc"), zvalue, zown)]
 pub struct Session;
 
 impl Session {
-    pub fn open(config: ZenohConfig, open_options: Option<z_open_options_t>) -> ZenohResult<Self> {
-        let open_options = open_options.unwrap_or_else(ZOptionsDefault::options_default);
+    pub fn open(
+        config: ZenohConfig,
+        open_options: Option<z_open_options_t>,
+    ) -> ZenohResult<Self> {
+        let open_options = open_options.unwrap_or_else(ZOptionsDefault::zdefault);
         let mut session = z_owned_session_t::default();
         unsafe {
             z_open(&mut session, config.zmove(), &open_options).into_zresult()?;
