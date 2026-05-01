@@ -55,7 +55,7 @@ pub struct ZValueAttr {
     base: Option<TypeBase>,
     value_ty: Option<Path>,
     #[darling(default = impl_trait_attr_default)]
-    impl_from: bool,
+    impl_from_value: bool,
     #[darling(default = || false)]
     impl_default: bool,
     #[darling(default = impl_trait_attr_default)]
@@ -240,7 +240,7 @@ impl ZWrapAttrTokens for ZValueAttr {
                 }
             }
         };
-        if self.impl_from {
+        if self.impl_from_value {
             let from_impl = &input.impl_signature(Some(
                 &quote! { ::core::convert::From<<Self as #zvalue_trait>::Value> },
             ));

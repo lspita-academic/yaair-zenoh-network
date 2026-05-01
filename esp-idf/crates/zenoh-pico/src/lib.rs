@@ -1,4 +1,5 @@
 pub mod encoding;
+pub mod entities;
 pub mod keyexpr;
 pub mod sample;
 pub mod session;

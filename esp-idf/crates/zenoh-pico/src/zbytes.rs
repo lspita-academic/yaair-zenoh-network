@@ -22,7 +22,10 @@ pub trait IntoZBytes {
     fn into_zbytes(self) -> ZBytes;
 }
 
-pub trait FromZBytes: Sized {
+pub trait FromZBytes
+where
+    Self: Sized,
+{
     type Error;
 
     fn from_zbytes(bytes: &ZBytes) -> Result<Self, Self::Error>;

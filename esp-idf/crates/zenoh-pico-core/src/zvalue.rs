@@ -7,7 +7,10 @@ use crate::result::ZenohResult;
 pub trait CType: Default + Debug + Copy + Clone + Sized {}
 impl<T: Default + Debug + Copy + Clone> CType for T {}
 
-pub trait ZValue: Sized {
+pub trait ZValue
+where
+    Self: Sized,
+{
     type Value: CType;
 
     fn uninitialized() -> Self;
