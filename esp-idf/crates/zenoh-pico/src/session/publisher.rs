@@ -17,7 +17,7 @@ use zenoh_pico_macros::zwrap;
 use crate::{
     keyexpr::KeyExpr,
     session::Session,
-    zoptions::{ZOptionsDefault, ZOptionsInit},
+    zoptions::{ZOptionsInit, options_ptr},
 };
 
 impl ZOptionsInit for z_publisher_options_t {
@@ -59,14 +59,14 @@ impl Publisher {
         key: &KeyExpr,
         publisher_options: Option<z_publisher_options_t>,
     ) -> ZenohResult<Self> {
-        let publisher_options = publisher_options.unwrap_or_else(ZOptionsDefault::zdefault);
+        let publisher_options = options_ptr(publisher_options.as_ref());
         let mut publisher = Default::default();
         unsafe {
             z_declare_publisher(
                 session.zloan(),
                 &mut publisher,
                 key.zloan(),
-                &publisher_options,
+                publisher_options,
             )
             .into_zresult()?;
         };

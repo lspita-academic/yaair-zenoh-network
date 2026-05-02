@@ -1,4 +1,3 @@
-pub mod config;
 pub mod publisher;
 pub mod subscriber;
 
@@ -13,10 +12,11 @@ use zenoh_pico_core::{
 use zenoh_pico_macros::zwrap;
 
 use crate::{
+    config::ZenohConfig,
     keyexpr::KeyExpr,
     result::{IntoZenohResult, ZenohResult},
-    session::{config::ZenohConfig, publisher::Publisher, subscriber::Subscriber},
-    zoptions::{ZOptionsDefault, ZOptionsInit},
+    session::{publisher::Publisher, subscriber::Subscriber},
+    zoptions::{ZOptionsInit, options_ptr},
 };
 
 impl ZOptionsInit for z_open_options_t {
@@ -32,10 +32,10 @@ pub struct Session;
 
 impl Session {
     pub fn open(config: ZenohConfig, open_options: Option<z_open_options_t>) -> ZenohResult<Self> {
-        let open_options = open_options.unwrap_or_else(ZOptionsDefault::zdefault);
+        let open_options = options_ptr(open_options.as_ref());
         let mut session = z_owned_session_t::default();
         unsafe {
-            z_open(&mut session, config.zmove(), &open_options).into_zresult()?;
+            z_open(&mut session, config.zmove(), open_options).into_zresult()?;
         }
         unsafe {
             // not done automatically, even if it should be because of the default options

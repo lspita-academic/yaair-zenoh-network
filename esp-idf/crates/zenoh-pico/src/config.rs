@@ -43,7 +43,7 @@ impl Into<u8> for ZenohConfigKey {
     }
 }
 
-#[zwrap(base(name = "config"), zvalue, zown)]
+#[zwrap(base(name = "config"), zvalue, zown, zclone)]
 pub struct ZenohConfig;
 
 pub struct ZenohConfigBuilder(ZenohConfig);

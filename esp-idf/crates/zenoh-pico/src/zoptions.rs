@@ -15,3 +15,7 @@ impl<T: ZOptionsInit + CType> ZOptionsDefault for T {
         value
     }
 }
+
+pub fn options_ptr<T: ZOptionsDefault>(opt: Option<&T>) -> *const T {
+    opt.map(|o| o as *const _).unwrap_or(core::ptr::null())
+}
