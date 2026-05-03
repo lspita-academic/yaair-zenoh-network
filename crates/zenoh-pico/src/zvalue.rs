@@ -45,7 +45,7 @@ pub trait ZClosure: ZOwn {
     type CallbackValue: CType;
 
     fn from_callback<T>(
-        callback: unsafe extern "C" fn(*mut Self::CallbackValue, *mut c_void),
+        callback: unsafe extern "C" fn(*const Self::CallbackValue, *mut c_void),
         context: Option<Arc<T>>,
     ) -> ZenohResult<Self>;
 
@@ -53,11 +53,11 @@ pub trait ZClosure: ZOwn {
         signal: Arc<Signal<M, T>>,
     ) -> ZenohResult<Self> {
         unsafe extern "C" fn zclosure_signal_callback<M: RawMutex, T: ZClone>(
-            value: *mut T::Value,
+            value: *const T::Value,
             context: *mut c_void,
         ) {
             let signal = unsafe { &*(context as *mut Signal<M, T>) };
-            let value = T::zclone(value as *const _);
+            let value = T::zclone(value);
             signal.signal(value);
         }
 

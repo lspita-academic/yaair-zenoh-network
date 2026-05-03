@@ -505,7 +505,7 @@ impl ZWrapAttrTokens for ZClosureAttr {
                 type CallbackValue = #callback_ty;
 
                 fn from_callback<T>(
-                    callback: unsafe extern "C" fn(*mut Self::CallbackValue, *mut #cvoid_ty),
+                    callback: unsafe extern "C" fn(*const Self::CallbackValue, *mut #cvoid_ty),
                     context: ::core::option::Option<#arc_ty<T>>,
                 ) -> #zenoh_result_ty<Self> {
                     use #zresult_trait as _;
@@ -518,7 +518,7 @@ impl ZWrapAttrTokens for ZClosureAttr {
 
                     unsafe extern "C" fn drop_context<T>(ptr: *mut #cvoid_ty) {
                         if !ptr.is_null() {
-                            drop(#arc_ty::<T>::from_raw(ptr as *const T));
+                            drop(unsafe { #arc_ty::<T>::from_raw(ptr as *const T) });
                         }
                     }
 
@@ -529,7 +529,7 @@ impl ZWrapAttrTokens for ZClosureAttr {
                             |z| unsafe {
                                 #init_zfn(
                                     z,
-                                    Some(callback),
+                                    ::core::mem::transmute(Some(callback)),
                                     Some(drop_context::<T>),
                                     context_ptr,
                                 ).into_zresult()
