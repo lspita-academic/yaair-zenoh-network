@@ -734,7 +734,7 @@ name = "esp-idf-config"
 version = "0.1.0"
 dependencies = [
  "embuild",
- "zenoh-pico",
+ "zenoh-pico-sys",
 ]
 
 [[package]]
@@ -2434,8 +2434,6 @@ name = "zenoh-pico"
 version = "0.1.0"
 dependencies = [
  "embassy-sync 0.8.0",
- "embuild",
- "esp-idf-svc",
  "ffi-utils",
  "log",
  "num_enum",
@@ -2444,6 +2442,7 @@ dependencies = [
  "thiserror 2.0.18",
  "uhlc",
  "zenoh-pico-macros",
+ "zenoh-pico-sys",
 ]
 
 [[package]]
@@ -2456,6 +2455,14 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn 2.0.117",
+]
+
+[[package]]
+name = "zenoh-pico-sys"
+version = "0.1.0"
+dependencies = [
+ "embuild",
+ "esp-idf-svc",
 ]
 
 [[package]]

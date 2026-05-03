@@ -5,6 +5,11 @@ use std::sync::Arc;
 
 use embassy_sync::signal::Signal;
 use zenoh_pico_macros::zwrap;
+use zenoh_pico_sys::{
+    z_close, z_close_options_t, z_declare_publisher, z_declare_subscriber, z_open,
+    z_open_options_default, z_open_options_t, z_publisher_options_t, z_session_is_closed,
+    z_subscriber_options_t,
+};
 
 use crate::{
     config::Config,
@@ -14,11 +19,6 @@ use crate::{
     session::{
         publisher::Publisher,
         subscriber::{InternalSubscriber, Subscriber},
-    },
-    sys::{
-        z_close, z_close_options_t, z_declare_publisher, z_declare_subscriber, z_open,
-        z_open_options_default, z_open_options_t, z_publisher_options_t, z_session_is_closed,
-        z_subscriber_options_t,
     },
     zoptions::{ZOptionsInit, options_ptr},
     zvalue::{ZClosure, ZOwn, ZValue},

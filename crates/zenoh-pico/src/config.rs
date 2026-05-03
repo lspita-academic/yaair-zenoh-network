@@ -4,16 +4,15 @@ use ffi_utils::cstring::CStringExtensions;
 use num_enum::{IntoPrimitive, TryFromPrimitive, UnsafeFromPrimitive};
 use strum::{Display, EnumString};
 use zenoh_pico_macros::zwrap;
+use zenoh_pico_sys::{
+    Z_CONFIG_CONNECT_KEY, Z_CONFIG_LISTEN_KEY, Z_CONFIG_MODE_KEY, Z_CONFIG_MULTICAST_LOCATOR_KEY,
+    Z_CONFIG_MULTICAST_SCOUTING_KEY, Z_CONFIG_SCOUTING_TIMEOUT_KEY, Z_CONFIG_SCOUTING_WHAT_KEY,
+    z_config_default, zp_config_insert,
+};
 
 use crate::{
     entities::whatami::WhatAmIMask,
     result::{IntoZenohResult, ZenohResult},
-    sys::{
-        Z_CONFIG_CONNECT_KEY, Z_CONFIG_LISTEN_KEY, Z_CONFIG_MODE_KEY,
-        Z_CONFIG_MULTICAST_LOCATOR_KEY, Z_CONFIG_MULTICAST_SCOUTING_KEY,
-        Z_CONFIG_SCOUTING_TIMEOUT_KEY, Z_CONFIG_SCOUTING_WHAT_KEY, z_config_default,
-        zp_config_insert,
-    },
     zvalue::{ZOwn, ZValue},
 };
 
@@ -60,20 +59,17 @@ impl ConfigBuilder {
     }
 
     pub fn mode(mut self, mode: ConfigMode) -> Self {
-        self.options
-            .insert(ConfigKey::ConfigMode, mode.to_string());
+        self.options.insert(ConfigKey::ConfigMode, mode.to_string());
         self
     }
 
     pub fn connect(mut self, locator: &str) -> Self {
-        self.options
-            .insert(ConfigKey::Connect, locator.to_string());
+        self.options.insert(ConfigKey::Connect, locator.to_string());
         self
     }
 
     pub fn listen(mut self, locator: &str) -> Self {
-        self.options
-            .insert(ConfigKey::Listen, locator.to_string());
+        self.options.insert(ConfigKey::Listen, locator.to_string());
         self
     }
 

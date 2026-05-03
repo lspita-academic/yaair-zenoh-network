@@ -1,14 +1,13 @@
 use std::str::FromStr;
 
 use zenoh_pico_macros::zwrap;
+use zenoh_pico_sys::{
+    _z_declared_keyexpr_t, z_declare_keyexpr, z_keyexpr_equals, z_keyexpr_from_substr_autocanonize,
+};
 
 use crate::{
     result::{IntoZenohResult, ZenohError, ZenohResult},
     session::Session,
-    sys::{
-        _z_declared_keyexpr_t, z_declare_keyexpr, z_keyexpr_equals,
-        z_keyexpr_from_substr_autocanonize,
-    },
     zvalue::{ZOwn, ZValue},
 };
 

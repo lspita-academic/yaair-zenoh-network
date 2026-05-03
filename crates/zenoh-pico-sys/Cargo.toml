@@ -1,0 +1,16 @@
+[package]
+name = "zenoh-pico-sys"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[[package.metadata.esp-idf-sys.extra_components]]
+component_dirs = ["lib"]
+bindings_header = "lib/zenoh-pico/include/zenoh-pico.h"
+bindings_module = "zenoh_pico"
+
+[dependencies]
+esp-idf-svc.workspace = true
+
+[build-dependencies]
+embuild.workspace = true

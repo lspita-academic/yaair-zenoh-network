@@ -4,13 +4,13 @@ use std::{
 };
 
 use zenoh_pico_macros::zwrap;
+use zenoh_pico_sys::{
+    _z_string_equals, _z_string_svec_t, z_string_array_get, z_string_array_len,
+    z_string_copy_from_substr, z_string_data, z_string_len,
+};
 
 use crate::{
     result::{IntoZenohResult, ZenohError},
-    sys::{
-        _z_string_equals, _z_string_svec_t, z_string_array_get, z_string_array_len,
-        z_string_copy_from_substr, z_string_data, z_string_len,
-    },
     zvalue::{ZOwn, ZValue},
 };
 

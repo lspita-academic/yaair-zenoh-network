@@ -1,11 +1,8 @@
 use uhlc::NTP64;
 use zenoh_pico_macros::zwrap;
+use zenoh_pico_sys::{z_timestamp_id, z_timestamp_ntp64_time};
 
-use crate::{
-    sys::{z_timestamp_id, z_timestamp_ntp64_time},
-    zid::ZId,
-    zvalue::ZValue,
-};
+use crate::{zid::ZId, zvalue::ZValue};
 
 #[zwrap(base(name = "timestamp"), zvalue)]
 pub struct Timestamp;

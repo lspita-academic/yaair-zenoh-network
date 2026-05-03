@@ -3,16 +3,16 @@ use std::ptr::NonNull;
 use ffi_utils::pointer::NonNullExtensions;
 use num_enum::{IntoPrimitive, TryFromPrimitive, UnsafeFromPrimitive};
 use zenoh_pico_macros::zwrap;
+use zenoh_pico_sys::{
+    z_sample_attachment, z_sample_congestion_control, z_sample_encoding, z_sample_express,
+    z_sample_keyexpr, z_sample_kind, z_sample_kind_t_Z_SAMPLE_KIND_DELETE,
+    z_sample_kind_t_Z_SAMPLE_KIND_PUT, z_sample_payload, z_sample_priority, z_sample_timestamp,
+};
 
 use crate::{
     encoding::Encoding,
     keyexpr::KeyExpr,
     session::publisher::{CongestionControl, MessagePriority},
-    sys::{
-        z_sample_attachment, z_sample_congestion_control, z_sample_encoding, z_sample_express,
-        z_sample_keyexpr, z_sample_kind, z_sample_kind_t_Z_SAMPLE_KIND_DELETE,
-        z_sample_kind_t_Z_SAMPLE_KIND_PUT, z_sample_payload, z_sample_priority, z_sample_timestamp,
-    },
     timestamp::Timestamp,
     zbytes::ZBytes,
     zvalue::ZValue,

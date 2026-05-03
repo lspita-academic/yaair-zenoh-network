@@ -4,12 +4,12 @@ use std::{
 };
 
 use zenoh_pico_macros::zwrap;
+use zenoh_pico_sys::{
+    ZP_ENCODING_ZENOH_BYTES, z_encoding_equals, z_encoding_from_substr, z_encoding_to_string,
+};
 
 use crate::{
     result::{IntoZenohResult, ZenohError},
-    sys::{
-        ZP_ENCODING_ZENOH_BYTES, z_encoding_equals, z_encoding_from_substr, z_encoding_to_string,
-    },
     zstring::ZString,
     zvalue::{ZOwn, ZValue},
 };

@@ -1,10 +1,10 @@
 use std::fmt::{self, Display};
 
 use zenoh_pico_macros::zwrap;
+use zenoh_pico_sys::z_id_to_string;
 
 use crate::{
     result::IntoZenohResult,
-    sys::z_id_to_string,
     zstring::ZString,
     zvalue::{ZOwn, ZValue},
 };

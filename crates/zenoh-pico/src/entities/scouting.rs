@@ -3,15 +3,15 @@ use std::sync::Arc;
 use embassy_sync::{blocking_mutex::raw::CriticalSectionRawMutex, signal::Signal};
 use num_enum::UnsafeFromPrimitive;
 use zenoh_pico_macros::zwrap;
+use zenoh_pico_sys::{
+    z_hello_whatami, z_hello_zid, z_scout, z_scout_options_default, z_scout_options_t,
+    zp_hello_locators,
+};
 
 use crate::{
     config::Config,
     entities::whatami::WhatAmI,
     result::{IntoZenohResult, ZenohResult},
-    sys::{
-        z_hello_whatami, z_hello_zid, z_scout, z_scout_options_default, z_scout_options_t,
-        zp_hello_locators,
-    },
     zid::ZId,
     zoptions::{ZOptionsInit, options_ptr},
     zstring::ZStringArray,
@@ -51,10 +51,7 @@ pub struct Scout {
 }
 
 impl Scout {
-    pub fn start(
-        config: Config,
-        scout_options: Option<z_scout_options_t>,
-    ) -> ZenohResult<Self> {
+    pub fn start(config: Config, scout_options: Option<z_scout_options_t>) -> ZenohResult<Self> {
         let scout_options = options_ptr(scout_options.as_ref());
         let signal = Arc::new(Signal::new());
         let closure = HelloClosure::from_signal(signal.clone())?;

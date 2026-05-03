@@ -1,13 +1,12 @@
 use std::{marker::PhantomData, mem::MaybeUninit};
 
 use zenoh_pico_macros::zwrap;
+use zenoh_pico_sys::{
+    z_bytes_copy_from_buf, z_bytes_empty, z_bytes_get_reader, z_bytes_reader_read, z_bytes_reader_t,
+};
 
 use crate::{
     result::{IntoZenohResult, ZenohError},
-    sys::{
-        z_bytes_copy_from_buf, z_bytes_empty, z_bytes_get_reader, z_bytes_reader_read,
-        z_bytes_reader_t,
-    },
     zvalue::{ZOwn, ZValue},
 };
 
