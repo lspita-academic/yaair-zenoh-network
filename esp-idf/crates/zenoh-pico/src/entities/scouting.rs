@@ -18,7 +18,7 @@ use crate::{
     zvalue::{ZClosure, ZOwn, ZValue},
 };
 
-#[zwrap(base(name = "hello"), zvalue, zown)]
+#[zwrap(base(name = "hello"), zvalue, zown, zclone)]
 pub struct Hello;
 
 #[zwrap(base(name = "closure_hello"), zvalue, zown, zclosure)]

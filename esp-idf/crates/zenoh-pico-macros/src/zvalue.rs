@@ -130,15 +130,16 @@ impl Parse for ZWrapInput {
     }
 }
 
-struct ZWrapParams {
-    base: Option<TypeBase>,
-    zenoh_pico: Path,
-    zenoh_pico_sys: Path,
+struct ZWrapParams<'a> {
+    base: Option<&'a TypeBase>,
+    config: &'a ZWrapConfig,
+    zenoh_pico: &'a Path,
+    zenoh_pico_sys: &'a Path,
 }
 
-impl ZWrapParams {
+impl ZWrapParams<'_> {
     pub fn merged_base<'a>(&'a self, base: Option<&'a TypeBase>) -> Option<&'a TypeBase> {
-        base.or(self.base.as_ref())
+        base.or(self.base)
     }
 
     pub fn path_or_sys_default<IdentCreator>(
@@ -419,28 +420,36 @@ impl ZWrapAttrTokens for ZOwnAttr {
 
 impl ZWrapAttrTokens for ZCloneAttr {
     fn to_tokens(&self, input: &ZWrapInput, params: &ZWrapParams) -> syn::Result<TokenStream> {
-        let &ZWrapParams { zenoh_pico, .. } = &params;
-
-        let clone_zfn = params.path_or_sys_default(
-            self.clone_zfn.as_ref(),
-            |b| format_ident!("z_{b}_clone"),
-            self.base.as_ref(),
-        )?;
+        let &ZWrapParams {
+            config, zenoh_pico, ..
+        } = &params;
 
         let zclone_trait: Path = parse_quote!(#zenoh_pico::zvalue::ZClone);
         let zclone_impl = &input.impl_signature(Some(&zclone_trait.to_token_stream()));
         let zvalue_trait: Path = parse_quote!(#zenoh_pico::zvalue::ZValue);
-        let zown_trait: Path = parse_quote!(#zenoh_pico::zvalue::ZOwn);
+
+         let clone_impl = if config.zown.is_some() {
+            let clone_zfn = params.path_or_sys_default(
+                self.clone_zfn.as_ref(),
+                |b| format_ident!("_z_{b}_copy"),
+                self.base.as_ref(),
+            )?;
+            quote! {
+                let mut value = <Self as #zvalue_trait>::Value::default();
+                #clone_zfn(&mut value, ptr);
+                value
+            }
+        } else {
+            quote! { ::core::ptr::read_unaligned(ptr); }
+        };
 
         let mut tokens = quote! {
             #zclone_impl {
-                fn zclone(loan: *const <Self as #zvalue_trait>::Value) -> Self {
-                    let mut value = <Self as #zvalue_trait>::uninitialized();
-                    <Self as #zown_trait>::with_zowned_mut(
-                        &mut value,
-                        |z| unsafe { #clone_zfn(z, loan) },
-                    );
-                    value
+                fn zclone(ptr: *const <Self as #zvalue_trait>::Value) -> Self {
+                    let value = unsafe {
+                        #clone_impl
+                    };
+                    <Self as #zvalue_trait>::from_zvalue(value)
                 }
             }
         };
@@ -535,12 +544,13 @@ impl ZWrapAttrTokens for ZClosureAttr {
 
 pub fn zwrap(input: ZWrapInput, config: ZWrapConfig) -> syn::Result<TokenStream> {
     let mut tokens = TokenStream::new();
-    let base = config.base;
-    let zenoh_pico = zenoh_pico_path()?;
-    let zenoh_pico_sys = zenoh_pico_sys_path()?;
+    let base = config.base.as_ref();
+    let zenoh_pico = &zenoh_pico_path()?;
+    let zenoh_pico_sys = &zenoh_pico_sys_path()?;
 
     let params = ZWrapParams {
         base,
+        config: &config,
         zenoh_pico,
         zenoh_pico_sys,
     };

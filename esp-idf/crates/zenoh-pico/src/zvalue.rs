@@ -37,8 +37,8 @@ pub trait ZOwn: ZValue {
     fn zdrop(&mut self);
 }
 
-pub trait ZClone: ZOwn {
-    fn zclone(loan: *const Self::Value) -> Self;
+pub trait ZClone: ZValue {
+    fn zclone(ptr: *const Self::Value) -> Self;
 }
 
 pub trait ZClosure: ZOwn {
@@ -49,15 +49,15 @@ pub trait ZClosure: ZOwn {
         context: Option<Arc<T>>,
     ) -> ZenohResult<Self>;
 
-    fn from_signal<M: RawMutex, T: ZValue<Value = Self::CallbackValue>>(
+    fn from_signal<M: RawMutex, T: ZClone<Value = Self::CallbackValue>>(
         signal: Arc<Signal<M, T>>,
     ) -> ZenohResult<Self> {
-        unsafe extern "C" fn zclosure_signal_callback<M: RawMutex, T: ZValue>(
+        unsafe extern "C" fn zclosure_signal_callback<M: RawMutex, T: ZClone>(
             value: *mut T::Value,
             context: *mut c_void,
         ) {
             let signal = unsafe { &*(context as *mut Signal<M, T>) };
-            let value = T::from_zvalue(unsafe { *value });
+            let value = T::zclone(value as *const _);
             signal.signal(value);
         }
 

@@ -14,7 +14,7 @@ use crate::{
     zvalue::{ZOwn, ZValue},
 };
 
-#[zwrap(base(name = "string"), zvalue, zown)]
+#[zwrap(base(name = "string"), zvalue, zown, zclone)]
 pub struct ZString;
 
 pub trait FromZStr
