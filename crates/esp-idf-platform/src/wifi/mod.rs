@@ -72,7 +72,8 @@ pub struct ConnectedWifi<'a>(Wifi<'a>);
 
 impl<'a> ConnectedWifi<'a> {
     pub async fn disconnect(mut self) -> Result<Wifi<'a>, EspError> {
-        self.0.disconnect().await.map(|_| self.0)
+        self.0.disconnect().await?;
+        Ok(self.0)
     }
 
     pub fn netif(&self) -> &EspNetif {

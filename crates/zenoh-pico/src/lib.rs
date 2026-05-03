@@ -1,5 +1,5 @@
 pub mod config;
-pub mod encoding;
+pub mod message;
 pub mod entities;
 pub mod keyexpr;
 pub mod result;

@@ -10,9 +10,8 @@ use zenoh_pico_sys::{
 };
 
 use crate::{
-    encoding::Encoding,
     keyexpr::KeyExpr,
-    session::publisher::{CongestionControl, MessagePriority},
+    message::{CongestionControl, Encoding, MessagePriority},
     timestamp::Timestamp,
     zbytes::ZBytes,
     zvalue::ZValue,

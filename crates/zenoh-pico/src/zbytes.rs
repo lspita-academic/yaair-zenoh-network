@@ -61,8 +61,8 @@ impl<T: AsRef<[u8]>> TryIntoZBytes for T {
         zbytes
             .with_zowned_mut(|z| unsafe {
                 z_bytes_copy_from_buf(z, slice.as_ptr(), slice.len()).into_zresult()
-            })
-            .map(|_| zbytes)
+            })?;
+        Ok(zbytes)
     }
 }
 

@@ -44,8 +44,8 @@ impl FromStr for ZString {
         zstring
             .with_zowned_mut(|z| unsafe {
                 z_string_copy_from_substr(z, s.as_ptr(), s.len()).into_zresult()
-            })
-            .map(|_| zstring)
+            })?;
+        Ok(zstring)
     }
 }
 

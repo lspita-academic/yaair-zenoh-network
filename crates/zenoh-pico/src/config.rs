@@ -104,7 +104,7 @@ impl ConfigBuilder {
         config.with_zowned_mut(|z| unsafe { z_config_default(z).into_zresult() })?;
         self.options
             .into_iter()
-            .try_for_each(|(key, value)| Self::set(&mut config, key, value))
-            .map(|_| config)
+            .try_for_each(|(key, value)| Self::set(&mut config, key, value))?;
+        Ok(config)
     }
 }

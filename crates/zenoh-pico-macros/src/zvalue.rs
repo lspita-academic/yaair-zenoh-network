@@ -4,7 +4,10 @@ use darling::FromMeta;
 use macro_utils::derive::DeriveInputExtensions;
 use proc_macro2::{Span, TokenStream};
 use quote::{ToTokens, format_ident, quote};
-use syn::{Data, DataStruct, DeriveInput, Error, Fields, Ident, Path, parse::Parse, parse_quote};
+use syn::{
+    Data, DataStruct, DeriveInput, Error, ExprPath, Fields, Ident, Path, TypePath, parse::Parse,
+    parse_quote,
+};
 
 use crate::{zenoh_pico_path, zenoh_pico_sys_path};
 
@@ -53,7 +56,7 @@ impl TypeBase {
 #[darling(default, from_word = default_meta_from_word)]
 pub struct ZValueAttr {
     base: Option<TypeBase>,
-    value_ty: Option<Path>,
+    value_ty: Option<TypePath>,
     #[darling(default = impl_trait_attr_default)]
     impl_from_value: bool,
     #[darling(default = || false)]
@@ -68,11 +71,11 @@ pub struct ZValueAttr {
 #[darling(default, from_word = default_meta_from_word)]
 struct ZOwnAttr {
     base: Option<TypeBase>,
-    owned_ty: Option<Path>,
+    owned_ty: Option<TypePath>,
     owned_attr: Option<Ident>,
-    moved_ty: Option<Path>,
-    move_zfn: Option<Path>,
-    drop_zfn: Option<Path>,
+    moved_ty: Option<TypePath>,
+    move_zfn: Option<ExprPath>,
+    drop_zfn: Option<ExprPath>,
     #[darling(default = impl_trait_attr_default)]
     impl_drop: bool,
     #[darling(default = impl_trait_attr_default)]
@@ -83,7 +86,7 @@ struct ZOwnAttr {
 #[darling(default, from_word = default_meta_from_word)]
 struct ZCloneAttr {
     base: Option<TypeBase>,
-    clone_zfn: Option<Path>,
+    clone_zfn: Option<ExprPath>,
     #[darling(default = impl_trait_attr_default)]
     impl_clone: bool,
 }
@@ -92,8 +95,8 @@ struct ZCloneAttr {
 #[darling(default, from_word = default_meta_from_word)]
 pub struct ZClosureAttr {
     base: Option<TypeBase>,
-    callback_ty: Option<Path>,
-    init_zfn: Option<Path>,
+    callback_ty: Option<TypePath>,
+    init_zfn: Option<ExprPath>,
 }
 
 #[derive(FromMeta, Default)]
@@ -142,13 +145,14 @@ impl ZWrapParams<'_> {
         base.or(self.base)
     }
 
-    pub fn path_or_sys_default<IdentCreator>(
+    pub fn path_or_sys_default<P, IdentCreator>(
         &self,
-        path: Option<&Path>,
+        path: Option<&P>,
         sys_ident_creator: IdentCreator,
         base: Option<&TypeBase>,
-    ) -> syn::Result<Path>
+    ) -> syn::Result<P>
     where
+        P: Parse + ToTokens,
         IdentCreator: FnOnce(&TypeBase) -> Ident,
     {
         path.map(ToTokens::into_token_stream)
@@ -440,7 +444,7 @@ impl ZWrapAttrTokens for ZCloneAttr {
                 value
             }
         } else {
-            quote! { ::core::ptr::read_unaligned(ptr); }
+            quote! { ::core::ptr::read_unaligned(ptr) }
         };
 
         let mut tokens = quote! {
@@ -534,8 +538,8 @@ impl ZWrapAttrTokens for ZClosureAttr {
                                     context_ptr,
                                 ).into_zresult()
                             },
-                        )
-                        .map(|_| value)
+                        )?;
+                    #zenoh_result_ty::<Self>::Ok(value)
                 }
             }
         })

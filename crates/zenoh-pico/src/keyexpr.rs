@@ -20,8 +20,8 @@ impl KeyExpr {
         keyexpr
             .with_zowned_mut(|z| unsafe {
                 z_declare_keyexpr(session.zloan(), z, self.zloan()).into_zresult()
-            })
-            .map(|_| keyexpr)
+            })?;
+        Ok(keyexpr)
     }
 }
 
@@ -33,8 +33,8 @@ impl FromStr for KeyExpr {
         keyexpr
             .with_zowned_mut(|z| unsafe {
                 z_keyexpr_from_substr_autocanonize(z, s.as_ptr(), &mut s.len()).into_zresult()
-            })
-            .map(|_| keyexpr)
+            })?;
+        Ok(keyexpr)
     }
 }
 

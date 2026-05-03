@@ -9,8 +9,11 @@ use crate::{
     zvalue::{ZOwn, ZValue},
 };
 
-#[zwrap(base(name = "id"), zvalue)]
+#[zwrap(base(name = "id"), zvalue, zclone)]
 pub struct ZId;
+
+#[zwrap(base(name = "closure_zid"), zvalue, zown, zclosure(callback_ty = <ZId as ZValue>::Value))]
+pub struct ZIdClosure;
 
 impl Display for ZId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {

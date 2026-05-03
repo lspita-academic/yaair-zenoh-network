@@ -1,0 +1,9 @@
+[package]
+name = "yaair-esp-zenoh-network"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+yaair.workspace = true
+zenoh-pico.workspace = true

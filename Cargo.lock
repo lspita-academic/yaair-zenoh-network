@@ -2430,6 +2430,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "yaair"
+version = "0.2.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "eb1671d6283f7b7ebe9730bc37dadca8dcc264b4f1932d4c0e018262046def1a"
+dependencies = [
+ "serde",
+]
+
+[[package]]
+name = "yaair-esp-zenoh-network"
+version = "0.1.0"
+dependencies = [
+ "yaair",
+ "zenoh-pico",
+]
+
+[[package]]
 name = "zenoh-pico"
 version = "0.1.0"
 dependencies = [
