@@ -27,10 +27,14 @@ pub struct SampleClosure;
 #[repr(u32)]
 pub enum SampleKind {
     #[default]
-    PUT = z_sample_kind_t_Z_SAMPLE_KIND_PUT,
-    DELETE = z_sample_kind_t_Z_SAMPLE_KIND_DELETE,
+    Put = z_sample_kind_t_Z_SAMPLE_KIND_PUT,
+    Delete = z_sample_kind_t_Z_SAMPLE_KIND_DELETE,
 }
 
+/// It would make sense make payload-related options available based on the sample
+/// kind, but the original Zenoh rust library doesn't do that, so it's not done
+/// here either.
+/// https://docs.rs/zenoh/1.9.0/zenoh/sample/struct.Sample.html
 impl Sample {
     pub fn timestamp(&self) -> Option<&Timestamp> {
         NonNull::from_ptr(unsafe { z_sample_timestamp(self.zloan()) })

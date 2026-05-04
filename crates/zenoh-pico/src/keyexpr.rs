@@ -1,28 +1,15 @@
 use std::str::FromStr;
 
 use zenoh_pico_macros::zwrap;
-use zenoh_pico_sys::{
-    _z_declared_keyexpr_t, z_declare_keyexpr, z_keyexpr_equals, z_keyexpr_from_substr_autocanonize,
-};
+use zenoh_pico_sys::{_z_declared_keyexpr_t, z_keyexpr_equals, z_keyexpr_from_substr_autocanonize};
 
 use crate::{
-    result::{IntoZenohResult, ZenohError, ZenohResult},
-    session::Session,
+    result::{IntoZenohResult, ZenohError},
     zvalue::{ZOwn, ZValue},
 };
 
 #[zwrap(base(name = "keyexpr"), zvalue(value_ty = _z_declared_keyexpr_t), zown)]
 pub struct KeyExpr;
-
-impl KeyExpr {
-    pub fn declare(self, session: &Session) -> ZenohResult<Self> {
-        let mut keyexpr = Self::uninitialized();
-        keyexpr.with_zowned_mut(|z| unsafe {
-            z_declare_keyexpr(session.zloan(), z, self.zloan()).into_zresult()
-        })?;
-        Ok(keyexpr)
-    }
-}
 
 impl FromStr for KeyExpr {
     type Err = ZenohError;
