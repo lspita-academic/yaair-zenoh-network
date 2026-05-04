@@ -24,7 +24,7 @@ async fn ping(zenoh_session: &'static Session) {
         )
         .expect("Failed to declare ping publisher");
     let subscriber = zenoh_session
-        .declare_subscriber(
+        .declare_subscriber_async(
             &"pong/value".parse().expect("Pong keyexpr should be valid"),
             None,
         )
