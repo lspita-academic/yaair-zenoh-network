@@ -445,25 +445,29 @@ impl ZWrapAttrTokens for ZCloneAttr {
         let clone_impl = if config.zown.is_some() {
             let clone_zfn = params.path_or_sys_default(
                 self.clone_zfn.as_ref(),
-                |b| format_ident!("_z_{b}_copy"),
+                |b| format_ident!("z_{b}_clone"),
                 self.base.as_ref(),
             )?;
+            let zown_trait: Path = parse_quote!(#zenoh_pico::zvalue::ZOwn);
+
             quote! {
-                let mut value = <Self as #zvalue_trait>::Value::default();
-                #clone_zfn(&mut value, ptr);
+                let mut value = <Self as #zvalue_trait>::uninitialized();
+                <Self as #zown_trait>::with_zowned_mut(
+                    &mut value,
+                    |z| unsafe {
+                        #clone_zfn(z, ptr);
+                    },
+                );
                 value
             }
         } else {
-            quote! { ::core::ptr::read_unaligned(ptr) }
+            quote! { <Self as #zvalue_trait>::from_zvalue(unsafe { ::core::ptr::read_unaligned(ptr) }) }
         };
 
         let mut tokens = quote! {
             #zclone_impl {
                 fn zclone(ptr: *const <Self as #zvalue_trait>::Value) -> Self {
-                    let value = unsafe {
-                        #clone_impl
-                    };
-                    <Self as #zvalue_trait>::from_zvalue(value)
+                    #clone_impl
                 }
             }
         };
@@ -578,18 +582,17 @@ impl ZWrapAttrTokens for ZClosureAttr {
                     }
 
                     let mut value = <Self as #zvalue_trait>::uninitialized();
-                    <Self as #zown_trait>
-                        ::with_zowned_mut(
-                            &mut value,
-                            |z| unsafe {
-                                #init_zfn(
-                                    z,
-                                    ::core::mem::transmute(Some(callback)),
-                                    Some(drop_context::<T>),
-                                    context_ptr,
-                                ).into_zresult()
-                            },
-                        )?;
+                    <Self as #zown_trait>::with_zowned_mut(
+                        &mut value,
+                        |z| unsafe {
+                            #init_zfn(
+                                z,
+                                ::core::mem::transmute(Some(callback)),
+                                Some(drop_context::<T>),
+                                context_ptr,
+                            ).into_zresult()
+                        },
+                    )?;
                     #zenoh_result_ty::<Self>::Ok(value)
                 }
             }

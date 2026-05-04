@@ -1,11 +1,11 @@
-use std::{ffi::c_void, fmt::Debug, sync::Arc};
+use std::{ffi::c_void, sync::Arc};
 
 use embassy_sync::{blocking_mutex::raw::RawMutex, signal::Signal};
 
 use crate::result::ZenohResult;
 
-pub trait CType: Default + Debug + Copy + Clone + Sized {}
-impl<T: Default + Debug + Copy + Clone> CType for T {}
+pub trait CType: Default + Copy + Clone + Sized {}
+impl<T: Default + Copy + Clone> CType for T {}
 
 pub trait ZValue
 where
