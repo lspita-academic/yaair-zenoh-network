@@ -481,7 +481,11 @@ impl ZWrapAttrTokens for ZCloneAttr {
                 value
             }
         } else {
-            quote! { <Self as #zvalue_trait>::from_zvalue(unsafe { ::core::ptr::read_unaligned(ptr) }) }
+            let clone_zfn = self
+                .clone_zfn
+                .clone()
+                .unwrap_or_else(|| parse_quote!(::core::ptr::read_unaligned));
+            quote! { <Self as #zvalue_trait>::from_zvalue(unsafe { #clone_zfn(ptr) }) }
         };
 
         let mut tokens = quote! {

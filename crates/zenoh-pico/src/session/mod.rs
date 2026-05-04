@@ -9,9 +9,9 @@ use embassy_sync::signal::Signal;
 use zenoh_pico_macros::zwrap;
 use zenoh_pico_sys::{
     z_close, z_close_options_t, z_declare_publisher, z_declare_querier, z_declare_queryable,
-    z_declare_subscriber, z_info_peers_zid, z_open, z_open_options_default, z_open_options_t,
-    z_publisher_options_t, z_querier_options_t, z_queryable_options_t, z_session_is_closed,
-    z_subscriber_options_t,
+    z_declare_subscriber, z_info_peers_zid, z_info_zid, z_open, z_open_options_default,
+    z_open_options_t, z_publisher_options_t, z_querier_options_t, z_queryable_options_t,
+    z_session_is_closed, z_subscriber_options_t,
 };
 
 use crate::{
@@ -25,7 +25,7 @@ use crate::{
         pubsub::{InternalSubscriber, Publisher, Subscriber},
         queryreply::{InternalQueryable, Querier, Queryable},
     },
-    zid::ZIdClosure,
+    zid::{ZId, ZIdClosure},
     zoptions::{ZOptionsInit, options_ptr, options_ptr_mut},
     zvalue::{ZClosure, ZOwn, ZValue},
 };
@@ -138,6 +138,10 @@ impl Session {
             z_declare_querier(self.zloan(), z, key.zloan(), options).into_zresult()
         })?;
         Ok(querier)
+    }
+
+    pub fn zid(&self) -> ZId {
+        unsafe { z_info_zid(self.zloan()) }.into()
     }
 
     pub fn peers(&self) -> ZenohResult<PeersInfo> {
