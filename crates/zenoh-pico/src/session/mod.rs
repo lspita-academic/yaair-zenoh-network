@@ -1,3 +1,4 @@
+pub(self) mod handler;
 pub mod info;
 pub mod matching;
 pub mod pubsub;
@@ -8,22 +9,22 @@ use std::sync::Arc;
 use embassy_sync::signal::Signal;
 use zenoh_pico_macros::zwrap;
 use zenoh_pico_sys::{
-    z_close, z_close_options_t, z_declare_publisher, z_declare_querier, z_declare_queryable,
-    z_declare_subscriber, z_info_peers_zid, z_info_zid, z_open, z_open_options_default,
-    z_open_options_t, z_publisher_options_t, z_querier_options_t, z_queryable_options_t,
-    z_session_is_closed, z_subscriber_options_t,
+    z_close, z_close_options_t, z_declare_publisher, z_declare_querier, z_info_peers_zid,
+    z_info_zid, z_open, z_open_options_default, z_open_options_t, z_publisher_options_t,
+    z_querier_options_t, z_queryable_options_t, z_session_is_closed, z_subscriber_options_t,
 };
 
 use crate::{
     config::Config,
     keyexpr::KeyExpr,
-    query::QueryClosure,
+    query::{Query, QueryClosure},
     result::{IntoZenohResult, ZenohResult},
-    sample::SampleClosure,
+    sample::{Sample, SampleClosure},
     session::{
+        handler::{AsyncHandler, KeyHandler},
         info::PeersInfo,
-        pubsub::{InternalSubscriber, Publisher, Subscriber},
-        queryreply::{InternalQueryable, Querier, Queryable},
+        pubsub::{Publisher, Subscriber},
+        queryreply::{Querier, Queryable},
     },
     zid::{ZId, ZIdClosure},
     zoptions::{ZOptionsInit, options_ptr, options_ptr_mut},
@@ -84,47 +85,41 @@ impl Session {
     pub fn declare_subscriber(
         &self,
         key: &KeyExpr,
+        closure: SampleClosure,
         options: Option<z_subscriber_options_t>,
     ) -> ZenohResult<Subscriber> {
-        let options = options_ptr(options.as_ref());
-        let signal = Arc::new(Signal::new());
-        let sample_closure = SampleClosure::from_signal(signal.clone())?;
+        Subscriber::from_declaration(self, key, closure, options)
+    }
 
-        let mut subscriber = InternalSubscriber::uninitialized();
-        subscriber.with_zowned_mut(|z| unsafe {
-            z_declare_subscriber(
-                self.zloan(),
-                z,
-                key.zloan(),
-                &mut sample_closure.zmove(),
-                options,
-            )
-            .into_zresult()
-        })?;
-        Ok(Subscriber { subscriber, signal })
+    pub fn declare_subscriber_async(
+        &self,
+        key: &KeyExpr,
+        options: Option<z_subscriber_options_t>,
+    ) -> ZenohResult<AsyncHandler<Subscriber, Sample>> {
+        let signal = Arc::new(Signal::new());
+        let closure = SampleClosure::from_signal(signal.clone())?;
+        let subscriber = self.declare_subscriber(key, closure, options)?;
+        Ok(AsyncHandler::new(subscriber, signal))
     }
 
     pub fn declare_queryable(
         &self,
         key: &KeyExpr,
+        closure: QueryClosure,
         options: Option<z_queryable_options_t>,
     ) -> ZenohResult<Queryable> {
-        let options = options_ptr(options.as_ref());
-        let signal = Arc::new(Signal::new());
-        let query_closure = QueryClosure::from_signal(signal.clone())?;
+        Queryable::from_declaration(self, key, closure, options)
+    }
 
-        let mut queryable = InternalQueryable::uninitialized();
-        queryable.with_zowned_mut(|z| unsafe {
-            z_declare_queryable(
-                self.zloan(),
-                z,
-                key.zloan(),
-                &mut query_closure.zmove(),
-                options,
-            )
-            .into_zresult()
-        })?;
-        Ok(Queryable { queryable, signal })
+    pub fn declare_queryable_async(
+        &self,
+        key: &KeyExpr,
+        options: Option<z_queryable_options_t>,
+    ) -> ZenohResult<AsyncHandler<Queryable, Query>> {
+        let signal = Arc::new(Signal::new());
+        let closure = QueryClosure::from_signal(signal.clone())?;
+        let queryable = self.declare_queryable(key, closure, options)?;
+        Ok(AsyncHandler::new(queryable, signal))
     }
 
     pub fn declare_querier(

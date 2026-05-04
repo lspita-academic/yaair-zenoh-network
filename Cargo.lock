@@ -2442,6 +2442,7 @@ dependencies = [
 name = "yaair-esp-zenoh-network"
 version = "0.1.0"
 dependencies = [
+ "postcard",
  "yaair",
  "zenoh-pico",
 ]
