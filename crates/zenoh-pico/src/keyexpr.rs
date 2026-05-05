@@ -11,7 +11,7 @@ use crate::{
     zvalue::{ZOwn, ZValue},
 };
 
-#[zwrap(base(name = "keyexpr"), zvalue(value_ty = _z_declared_keyexpr_t), zown)]
+#[zwrap(base(name = "keyexpr"), zvalue(value_ty = _z_declared_keyexpr_t), zown, zclone)]
 pub struct KeyExpr;
 
 impl KeyExpr {
