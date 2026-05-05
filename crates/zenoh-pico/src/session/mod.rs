@@ -11,7 +11,8 @@ use zenoh_pico_macros::zwrap;
 use zenoh_pico_sys::{
     z_close, z_close_options_t, z_declare_publisher, z_declare_querier, z_info_peers_zid,
     z_info_zid, z_open, z_open_options_default, z_open_options_t, z_publisher_options_t,
-    z_querier_options_t, z_queryable_options_t, z_session_is_closed, z_subscriber_options_t,
+    z_querier_options_t, z_queryable_options_t, z_session_drop, z_session_is_closed,
+    z_session_move, z_subscriber_options_t,
 };
 
 use crate::{
@@ -45,8 +46,19 @@ impl ZOptionsInit for z_close_options_t {
     }
 }
 
-#[zwrap(base(name = "session", family = "rc"), zvalue, zown)]
+#[zwrap(base(name = "session", family = "rc"), zvalue, zown(impl_drop = false))]
 pub struct Session;
+
+impl Drop for Session {
+    fn drop(&mut self) {
+        Self::close_with_options(self, None).unwrap_or_else(|e| {
+            if !std::thread::panicking() {
+                panic!("Error closing session: {e}")
+            }
+        });
+        self.zdrop();
+    }
+}
 
 impl Session {
     pub fn open(config: Config, options: Option<z_open_options_t>) -> ZenohResult<Self> {
@@ -58,15 +70,17 @@ impl Session {
         Ok(session)
     }
 
-    pub fn close(mut self, options: Option<z_close_options_t>) {
+    fn close_with_options(&mut self, options: Option<z_close_options_t>) -> ZenohResult<()> {
         let session_closed = unsafe { z_session_is_closed(self.zloan()) };
         if session_closed {
-            return;
+            return Ok(());
         }
         let options = options_ptr(options.as_ref());
-        unsafe {
-            z_close(self.zloan_mut(), options);
-        }
+        unsafe { z_close(self.zloan_mut(), options).into_zresult() }
+    }
+
+    pub fn close(mut self, options: Option<z_close_options_t>) -> ZenohResult<()> {
+        Self::close_with_options(&mut self, options)
     }
 
     pub fn declare_publisher(
