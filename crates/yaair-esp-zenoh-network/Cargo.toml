@@ -5,7 +5,9 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
+log.workspace = true
 postcard.workspace = true
+serde.workspace = true
 thiserror.workspace = true
 yaair.workspace = true
 zenoh-pico.workspace = true
