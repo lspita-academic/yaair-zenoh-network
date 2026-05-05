@@ -31,7 +31,7 @@ impl KeyExpr {
         Ok(keyexpr)
     }
 
-    pub fn join_autocanonize(self, other: &KeyExpr) -> ZenohResult<KeyExpr> {
+    pub fn join_autocanonize(&self, other: &KeyExpr) -> ZenohResult<KeyExpr> {
         let mut keyexpr = Self::uninitialized();
         keyexpr.with_zowned_mut(|z| unsafe {
             z_keyexpr_join(z, self.zloan(), other.zloan()).into_zresult()
