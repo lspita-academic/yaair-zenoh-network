@@ -1,14 +1,8 @@
 [package]
-name = "ping-pong"
+name = "examples"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
-
-[[example]]
-name = "ping"
-
-[[example]]
-name = "pong"
 
 [dependencies]
 critical-section.workspace = true
@@ -19,6 +13,9 @@ esp-idf-svc.workspace = true
 log.workspace = true
 postcard.workspace = true
 static_cell.workspace = true
+yaair.workspace = true
+yaair-esp-zenoh-network.workspace = true
+yaair_serde.workspace = true
 zenoh-pico.workspace = true
 
 [build-dependencies]
