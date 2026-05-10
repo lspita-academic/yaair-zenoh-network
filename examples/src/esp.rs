@@ -1,12 +1,13 @@
-use esp_idf_platform::wifi::{ConnectedWifi, Wifi, config::WifiConfig};
-use esp_idf_svc::log::EspLogger;
+use esp_idf_platform::{
+    self,
+    wifi::{ConnectedWifi, Wifi, config::WifiConfig},
+};
 use static_cell::StaticCell;
 
 static WIFI: StaticCell<ConnectedWifi<'static>> = StaticCell::new();
 
 pub fn init() {
-    esp_idf_svc::sys::link_patches();
-    EspLogger::initialize_default();
+    esp_idf_platform::init(Default::default());
 }
 
 pub async fn start_wifi() -> &'static mut ConnectedWifi<'static> {
