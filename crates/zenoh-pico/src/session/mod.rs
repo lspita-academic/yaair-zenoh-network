@@ -1,4 +1,4 @@
-pub(self) mod handler;
+mod handler;
 pub mod info;
 pub mod matching;
 pub mod pubsub;
