@@ -21,7 +21,7 @@ use crate::{
 };
 
 pub struct MessageSubscriber {
-    subscriber: Subscriber,
+    _subscriber: Subscriber, // keep alive
 }
 
 impl MessageSubscriber {
@@ -35,11 +35,7 @@ impl MessageSubscriber {
             SampleClosure::from_callback(Self::on_message::<S>, Some(context.clone()))?,
             None,
         )?;
-        Ok(Self { subscriber })
-    }
-
-    pub fn subscriber(&self) -> &Subscriber {
-        &self.subscriber
+        Ok(Self { _subscriber: subscriber })
     }
 
     unsafe extern "C" fn on_message<S: Serializer>(
@@ -90,10 +86,6 @@ impl MessagePublisher {
             None,
         )?;
         Ok(Self { zid, publisher })
-    }
-
-    pub fn zid(&self) -> ZId {
-        self.zid
     }
 
     pub fn publisher(&self) -> &Publisher {

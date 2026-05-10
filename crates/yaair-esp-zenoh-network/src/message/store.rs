@@ -4,9 +4,10 @@ use std::{
     time::{Duration, SystemTime},
 };
 
+use thiserror::Error;
 use zenoh_pico::zid::ZId;
 
-use crate::{atomic::PoisonedLockError, message::Message};
+use crate::message::Message;
 
 #[derive(Clone)]
 pub struct StoreMessage {
@@ -18,10 +19,6 @@ impl StoreMessage {
     pub fn new(message: Message) -> Self {
         let timestamp = SystemTime::now();
         Self { message, timestamp }
-    }
-
-    pub fn message(&self) -> &Message {
-        &self.message
     }
 
     pub fn timestamp(&self) -> SystemTime {
@@ -47,6 +44,10 @@ pub struct AtomicMessagesStore {
     lifespan: Duration,
     storage: Mutex<Storage>,
 }
+
+#[derive(Debug, Error)]
+#[error("poisoned lock")]
+pub struct PoisonedLockError;
 
 impl AtomicMessagesStore {
     pub fn new(lifespan: Duration) -> Self {

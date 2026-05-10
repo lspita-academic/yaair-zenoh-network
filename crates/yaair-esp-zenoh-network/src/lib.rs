@@ -1,5 +1,4 @@
-pub mod atomic;
-pub mod message;
+mod message;
 
 use std::{collections::HashMap, marker::PhantomData, sync::Arc, time::Duration};
 

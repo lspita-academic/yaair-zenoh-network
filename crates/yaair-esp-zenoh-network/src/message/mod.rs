@@ -13,10 +13,6 @@ impl Message {
     pub fn new(payload: Vec<u8>) -> Self {
         Self { payload }
     }
-
-    pub fn payload(&self) -> &[u8] {
-        &self.payload
-    }
 }
 
 impl Into<Vec<u8>> for Message {
@@ -36,13 +32,5 @@ pub struct MessagePacket {
 impl MessagePacket {
     pub fn new(message: Message, sender: ZId) -> Self {
         Self { message, sender }
-    }
-
-    pub fn message(&self) -> &Message {
-        &self.message
-    }
-
-    pub fn sender(&self) -> ZId {
-        self.sender
     }
 }
