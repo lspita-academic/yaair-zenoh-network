@@ -2433,9 +2433,7 @@ dependencies = [
 
 [[package]]
 name = "yaair"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "eb1671d6283f7b7ebe9730bc37dadca8dcc264b4f1932d4c0e018262046def1a"
+version = "0.3.0"
 dependencies = [
  "serde",
 ]
@@ -2454,9 +2452,7 @@ dependencies = [
 
 [[package]]
 name = "yaair_serde"
-version = "0.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2fda550626b56c6cc0eac5073cdd92e11d7bd741766d9fe469dc96456be0e865"
+version = "0.2.1"
 dependencies = [
  "serde",
  "serde_json",

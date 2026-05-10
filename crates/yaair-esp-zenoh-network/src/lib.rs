@@ -66,7 +66,7 @@ impl<'a, S: Serializer> ZenohPicoNetwork<'a, S> {
     }
 }
 
-impl<S: Serializer> Network<ZId, S> for ZenohPicoNetwork<'_, S> {
+impl<S: Serializer> Network<ZId> for ZenohPicoNetwork<'_, S> {
     fn prepare_outbound(&mut self, outbound_message: Vec<u8>) {
         let keyexpr = self.messages_publisher.publisher().keyexpr();
         log::info!("Publishing message to {keyexpr}");
