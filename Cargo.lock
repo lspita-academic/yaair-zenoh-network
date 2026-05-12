@@ -824,6 +824,7 @@ dependencies = [
  "log",
  "postcard",
  "static_cell",
+ "uuid",
  "yaair",
  "yaair-esp-zenoh-network",
  "yaair_serde",
@@ -1065,12 +1066,6 @@ name = "heck"
 version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2304e00983f87ffb38b55b444b5e3b60a884b5d30c0fca7d82fe33449bbe55ea"
-
-[[package]]
-name = "hex"
-version = "0.4.3"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f24254aa9a54b5c858eaee2f5bccdb46aaf0e486a595ed5fd8f86ba55232a70"
 
 [[package]]
 name = "home"
@@ -2031,6 +2026,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ebc1c04c71510c7f702b52b7c350734c9ff1295c464a03335b00bb84fc54f853"
 
 [[package]]
+name = "uuid"
+version = "1.23.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ddd74a9687298c6858e9b88ec8935ec45d22e8fd5e6394fa1bd4e99a87789c76"
+dependencies = [
+ "js-sys",
+ "wasm-bindgen",
+]
+
+[[package]]
 name = "valuable"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2469,13 +2474,13 @@ version = "0.1.0"
 dependencies = [
  "embassy-sync 0.8.0",
  "ffi-utils",
- "hex",
  "log",
  "num_enum",
  "serde",
  "strum 0.28.0",
  "thiserror 2.0.18",
  "uhlc",
+ "uuid",
  "zenoh-pico-macros",
  "zenoh-pico-sys",
 ]

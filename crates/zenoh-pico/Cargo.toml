@@ -7,12 +7,12 @@ rust-version.workspace = true
 [dependencies]
 embassy-sync.workspace = true
 ffi-utils.workspace = true
-hex.workspace = true
 log.workspace = true
 num_enum.workspace = true
 serde.workspace = true
 strum.workspace = true
 thiserror.workspace = true
 uhlc.workspace = true
+uuid.workspace = true
 zenoh-pico-macros.workspace = true
 zenoh-pico-sys.workspace = true

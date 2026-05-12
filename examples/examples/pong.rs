@@ -47,6 +47,6 @@ async fn pong(session: &'static Session) {
 async fn main(spawner: Spawner) {
     esp::init();
     let wifi = esp::start_wifi().await;
-    let session = zenoh::start_session(wifi.netif().get_name());
+    let session = zenoh::start_session(wifi.netif().get_name(), None);
     spawner.spawn(pong(session).expect("Failed to create pong task"));
 }

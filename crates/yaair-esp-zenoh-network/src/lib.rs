@@ -68,7 +68,7 @@ impl<S: Serializer> Network<ZId> for ZenohPicoNetwork<'_, S> {
     fn prepare_outbound(&mut self, outbound_message: Vec<u8>) {
         let keyexpr = self.messages_publisher.publisher().keyexpr();
         log::info!("Publishing message to {keyexpr}");
-        log::info!("Payload size: {}", outbound_message.len());
+        log::debug!("Payload size: {}", outbound_message.len());
         match self.messages_publisher.put(outbound_message) {
             Ok(_) => log::info!("Message published successfully"),
             Err(e) => log::warn!("Error publishing message: {e}"),
@@ -76,11 +76,12 @@ impl<S: Serializer> Network<ZId> for ZenohPicoNetwork<'_, S> {
     }
 
     fn prepare_inbound(&mut self) -> InboundMessage<ZId> {
+        log::info!("Preparing inbound message");
         let messages = &self.context.messages;
-        log::info!("Preparing snapshot of messages");
+        log::debug!("Preparing snapshot of messages");
         let snapshot = match messages.clear_dead().and_then(|_| messages.snapshot()) {
             Ok(s) => {
-                log::info!("Snapshot created successfully");
+                log::debug!("Snapshot created successfully");
                 s
             }
             Err(e) => {
@@ -88,7 +89,7 @@ impl<S: Serializer> Network<ZId> for ZenohPicoNetwork<'_, S> {
                 return Default::default();
             }
         };
-        log::info!("Creating inbound message");
+        log::debug!("Creating inbound message");
         let inbound_message_map = snapshot
             .into_iter()
             .map(|(zid, message)| (zid, message.into()))

@@ -8,6 +8,7 @@ use serde::{
     de::{self, Visitor},
     ser::SerializeStruct,
 };
+use uuid::Uuid;
 use zenoh_pico_macros::zwrap;
 use zenoh_pico_sys::{_z_id_cmp, _z_id_hash, _z_id_t, ZENOH_ID_SIZE, z_id_to_string};
 
@@ -25,9 +26,17 @@ pub type ZIdBytes = [u8; ZId::SIZE];
 
 impl ZId {
     pub const SIZE: usize = ZENOH_ID_SIZE as usize;
+}
 
-    pub fn new(bytes: ZIdBytes) -> Self {
-        Self::from_zvalue(_z_id_t { id: bytes })
+impl From<ZIdBytes> for ZId {
+    fn from(value: ZIdBytes) -> Self {
+        Self::from_zvalue(_z_id_t { id: value })
+    }
+}
+
+impl From<Uuid> for ZId {
+    fn from(value: Uuid) -> Self {
+        Self::from(value.into_bytes())
     }
 }
 
@@ -105,17 +114,17 @@ impl<'de> Deserialize<'de> for ZId {
             where
                 A: serde::de::SeqAccess<'de>,
             {
-                let id = seq
+                let id: ZIdBytes = seq
                     .next_element()?
                     .ok_or_else(|| de::Error::invalid_length(0, &self))?;
-                Ok(ZId::new(id))
+                Ok(id.into())
             }
 
             fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
             where
                 A: de::MapAccess<'de>,
             {
-                let mut id = None;
+                let mut id = None::<ZIdBytes>;
                 while let Some(key) = map.next_key()? {
                     match key {
                         Field::Id => {
@@ -127,7 +136,7 @@ impl<'de> Deserialize<'de> for ZId {
                     }
                 }
                 let id = id.ok_or_else(|| de::Error::missing_field("id"))?;
-                Ok(ZId::new(id))
+                Ok(id.into())
             }
         }
 

@@ -27,7 +27,6 @@ esp-idf-svc = { version = "0.52", features = [
 ] }
 ffi-utils = { path = "crates/ffi-utils" }
 heapless = "0.9"
-hex = "0.4"
 itertools = "0.14.0"
 log = "0.4"
 macro-utils = { path = "crates/macro-utils" }
@@ -42,6 +41,7 @@ strum = { version = "0.28", features = ["default", "derive"] }
 syn = "2.0"
 thiserror = "2.0"
 uhlc = "0.9"
+uuid = "1.23"
 yaair = "0.3"
 yaair-esp-zenoh-network = { path = "crates/yaair-esp-zenoh-network" }
 yaair_serde = "0.2"

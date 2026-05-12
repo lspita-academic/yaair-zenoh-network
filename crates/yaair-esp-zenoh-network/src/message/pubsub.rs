@@ -45,7 +45,7 @@ impl MessageSubscriber {
         let context = unsafe { &*context };
 
         let payload_bytes = sample.payload().owned_bytes();
-        log::info!("Payload size: {}", payload_bytes.len());
+        log::debug!("Payload size: {}", payload_bytes.len());
         let outbound_message: OutboundMessage<ZId> =
             match context.serializer.deserialize(&payload_bytes) {
                 Ok(p) => p,
