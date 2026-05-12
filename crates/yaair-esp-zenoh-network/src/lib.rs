@@ -69,10 +69,7 @@ impl<S: Serializer> Network<ZId> for ZenohPicoNetwork<'_, S> {
         let keyexpr = self.messages_publisher.publisher().keyexpr();
         log::info!("Publishing message to {keyexpr}");
         log::info!("Payload size: {}", outbound_message.len());
-        match self
-            .messages_publisher
-            .put(outbound_message, &self.context.serializer)
-        {
+        match self.messages_publisher.put(outbound_message) {
             Ok(_) => log::info!("Message published successfully"),
             Err(e) => log::warn!("Error publishing message: {e}"),
         }
@@ -92,29 +89,12 @@ impl<S: Serializer> Network<ZId> for ZenohPicoNetwork<'_, S> {
             }
         };
         log::info!("Creating inbound message");
-        let inbound_message_map = match snapshot
+        let inbound_message_map = snapshot
             .into_iter()
-            .map(|(zid, message)| {
-                let bytes: Vec<_> = message.into();
-                self.context
-                    .serializer
-                    .deserialize(&bytes)
-                    .map(|m| (zid, m))
-            })
-            .collect::<Result<_, _>>()
-        {
-            Ok(m) => {
-                log::info!("Messages deserialized successfully");
-                m
-            }
-            Err(e) => {
-                log::warn!("Error deserializing messages: {e}");
-                return Default::default();
-            }
-        };
+            .map(|(zid, message)| (zid, message.into()))
+            .collect();
         let inbound_message = InboundMessage::new(inbound_message_map);
         log::info!("Inbound message created");
-        log::debug!("Inbound message: {inbound_message:?}");
         inbound_message
     }
 }

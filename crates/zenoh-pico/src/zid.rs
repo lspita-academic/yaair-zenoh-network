@@ -3,7 +3,11 @@ use std::{
     hash::Hash,
 };
 
-use serde::{Deserialize, Serialize, de::Visitor, ser::SerializeStruct};
+use serde::{
+    Deserialize, Serialize,
+    de::{self, Visitor},
+    ser::SerializeStruct,
+};
 use zenoh_pico_macros::zwrap;
 use zenoh_pico_sys::{_z_id_cmp, _z_id_hash, _z_id_t, ZENOH_ID_SIZE, z_id_to_string};
 
@@ -82,25 +86,51 @@ impl<'de> Deserialize<'de> for ZId {
     where
         D: serde::Deserializer<'de>,
     {
-        struct BytesArrayVisitor;
+        #[derive(Deserialize)]
+        #[serde(field_identifier, rename_all = "lowercase")]
+        enum Field {
+            Id,
+        }
 
-        impl<'de> Visitor<'de> for BytesArrayVisitor {
-            type Value = ZIdBytes;
+        struct ZIdVisitor;
+
+        impl<'de> Visitor<'de> for ZIdVisitor {
+            type Value = ZId;
 
             fn expecting(&self, formatter: &mut fmt::Formatter) -> fmt::Result {
-                formatter.write_fmt(format_args!("an array of {} bytes", ZId::SIZE))
+                formatter.write_str("struct ZId")
             }
 
-            fn visit_byte_buf<E>(self, v: Vec<u8>) -> Result<Self::Value, E>
+            fn visit_seq<A>(self, mut seq: A) -> Result<Self::Value, A::Error>
             where
-                E: serde::de::Error,
+                A: serde::de::SeqAccess<'de>,
             {
-                let vec_len = v.len();
-                v.try_into().map_err(|_| E::invalid_length(vec_len, &self))
+                let id = seq
+                    .next_element()?
+                    .ok_or_else(|| de::Error::invalid_length(0, &self))?;
+                Ok(ZId::new(id))
+            }
+
+            fn visit_map<A>(self, mut map: A) -> Result<Self::Value, A::Error>
+            where
+                A: de::MapAccess<'de>,
+            {
+                let mut id = None;
+                while let Some(key) = map.next_key()? {
+                    match key {
+                        Field::Id => {
+                            if id.is_some() {
+                                return Err(de::Error::duplicate_field("id"));
+                            }
+                            id = Some(map.next_value()?);
+                        }
+                    }
+                }
+                let id = id.ok_or_else(|| de::Error::missing_field("id"))?;
+                Ok(ZId::new(id))
             }
         }
 
-        let id = deserializer.deserialize_byte_buf(BytesArrayVisitor)?;
-        Ok(Self::from(_z_id_t { id }))
+        deserializer.deserialize_struct("ZId", &["id"], ZIdVisitor)
     }
 }

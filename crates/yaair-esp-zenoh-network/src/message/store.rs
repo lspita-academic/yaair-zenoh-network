@@ -5,16 +5,17 @@ use std::{
 };
 
 use thiserror::Error;
+use yaair::yaair::messages::valuetree::ValueTree;
 use zenoh_pico::zid::ZId;
 
 #[derive(Clone)]
 pub struct StoreMessage {
-    payload: Vec<u8>,
+    payload: ValueTree,
     timestamp: SystemTime,
 }
 
 impl StoreMessage {
-    pub fn new(payload: Vec<u8>) -> Self {
+    pub fn new(payload: ValueTree) -> Self {
         let timestamp = SystemTime::now();
         Self { payload, timestamp }
     }
@@ -24,14 +25,14 @@ impl StoreMessage {
     }
 }
 
-impl From<Vec<u8>> for StoreMessage {
-    fn from(value: Vec<u8>) -> Self {
+impl From<ValueTree> for StoreMessage {
+    fn from(value: ValueTree) -> Self {
         StoreMessage::new(value)
     }
 }
 
-impl Into<Vec<u8>> for StoreMessage {
-    fn into(self) -> Vec<u8> {
+impl Into<ValueTree> for StoreMessage {
+    fn into(self) -> ValueTree {
         self.payload
     }
 }
@@ -59,7 +60,7 @@ impl AtomicMessagesStore {
         self.storage.lock().map_err(|_| PoisonedLockError)
     }
 
-    pub fn store(&self, zid: ZId, payload: Vec<u8>) -> Result<(), PoisonedLockError> {
+    pub fn store(&self, zid: ZId, payload: ValueTree) -> Result<(), PoisonedLockError> {
         let store_message = StoreMessage::new(payload);
         self.acquire_storage()?.insert(zid, store_message);
         Ok(())

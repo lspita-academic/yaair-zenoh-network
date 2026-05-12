@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
-use thiserror::Error;
-use yaair::yaair::messages::serializer::Serializer;
+use yaair::yaair::messages::{outbound::OutboundMessage, serializer::Serializer};
 use zenoh_pico::{
     keyexpr::KeyExpr,
     result::{ZenohError, ZenohResult},
@@ -15,7 +14,7 @@ use zenoh_pico::{
     zvalue::{ZClone, ZClosure, ZValue},
 };
 
-use crate::{NetworkContext, message::MessagePacket};
+use crate::NetworkContext;
 
 pub struct MessageSubscriber {
     _subscriber: Subscriber, // keep alive
@@ -46,20 +45,21 @@ impl MessageSubscriber {
         let context = unsafe { &*context };
 
         let payload_bytes = sample.payload().owned_bytes();
-        let MessagePacket {
-            sender,
-            payload,
-        } = match context.serializer.deserialize(&payload_bytes) {
-            Ok(p) => p,
-            Err(e) => {
-                log::warn!("Failed to deserialize message packet: {e}");
-                return;
-            }
-        };
+        log::info!("Payload size: {}", payload_bytes.len());
+        let outbound_message: OutboundMessage<ZId> =
+            match context.serializer.deserialize(&payload_bytes) {
+                Ok(p) => p,
+                Err(e) => {
+                    log::warn!("Failed to deserialize message packet: {e}");
+                    return;
+                }
+            };
 
-        log::info!("Sender: {sender}");
-        log::info!("Payload size: {}", payload.len());
-        match context.messages.store(sender, payload) {
+        log::info!("Sender: {}", outbound_message.sender);
+        match context
+            .messages
+            .store(outbound_message.sender, outbound_message.into())
+        {
             Ok(_) => log::info!("Message stored successfully"),
             Err(e) => log::warn!("Failed to store message: {e}"),
         }
@@ -67,16 +67,7 @@ impl MessageSubscriber {
 }
 
 pub struct MessagePublisher {
-    zid: ZId,
     publisher: Publisher,
-}
-
-#[derive(Debug, Error)]
-pub enum PutError<SerializationError> {
-    #[error("serialization error while trying to publish: {0}")]
-    Serialization(SerializationError),
-    #[error("zenoh error while trying to publish: {0}")]
-    Zenoh(ZenohError),
 }
 
 impl MessagePublisher {
@@ -86,23 +77,16 @@ impl MessagePublisher {
             &base_keyexpr.join_autocanonize(&KeyExpr::new(&zid.to_string())?)?,
             None,
         )?;
-        Ok(Self { zid, publisher })
+        Ok(Self { publisher })
     }
 
     pub fn publisher(&self) -> &Publisher {
         &self.publisher
     }
 
-    pub fn put<S: Serializer>(
-        &self,
-        payload: Vec<u8>,
-        serializer: &S,
-    ) -> Result<(), PutError<S::Error>> {
-        let packet = MessagePacket::new(payload, self.zid);
-        let payload = serializer
-            .serialize(&packet)
-            .map_err(PutError::Serialization)
-            .and_then(|v| v.try_into_zbytes().map_err(PutError::Zenoh))?;
-        self.publisher.put(payload, None).map_err(PutError::Zenoh)
+    pub fn put<M: AsRef<[u8]>>(&self, message: M) -> Result<(), ZenohError> {
+        message
+            .try_into_zbytes()
+            .and_then(|p| self.publisher.put(p, None))
     }
 }
