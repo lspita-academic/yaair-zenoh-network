@@ -4,6 +4,18 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 
+[[example]]
+name = "gradient-node1"
+path = "examples/node1.rs"
+
+[[example]]
+name = "gradient-node2"
+path = "examples/node2.rs"
+
+[[example]]
+name = "gradient-node3"
+path = "examples/node3.rs"
+
 [dependencies]
 critical-section.workspace = true
 embassy-executor.workspace = true
@@ -18,8 +30,3 @@ zenoh-pico.workspace = true
 
 [build-dependencies]
 embuild.workspace = true
-
-[features]
-node1 = []
-node2 = []
-node3 = []
