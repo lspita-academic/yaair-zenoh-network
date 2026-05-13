@@ -1,5 +1,5 @@
 mod comm;
-mod message;
+mod messages;
 
 use std::{sync::Arc, time::Duration};
 
@@ -11,7 +11,7 @@ use zenoh_pico::{keyexpr::KeyExpr, result::ZenohResult, session::Session, zid::Z
 
 use crate::{
     comm::pubsub::{MessagePublisher, MessageSubscriber},
-    message::store::AtomicMessagesStore,
+    messages::store::AtomicMessagesStore,
 };
 
 pub struct NetworkContext<S> {
