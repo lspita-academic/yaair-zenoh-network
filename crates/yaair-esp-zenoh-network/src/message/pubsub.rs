@@ -58,7 +58,7 @@ impl MessageSubscriber {
         log::info!("Sender: {}", outbound_message.sender);
         match context
             .messages
-            .store(outbound_message.sender, outbound_message.into())
+            .store(outbound_message.sender, outbound_message.into_inner())
         {
             Ok(_) => log::info!("Message stored successfully"),
             Err(e) => log::warn!("Failed to store message: {e}"),

@@ -5,17 +5,16 @@ use std::{
 };
 
 use thiserror::Error;
-use yaair::yaair::messages::valuetree::ValueTree;
 use zenoh_pico::zid::ZId;
 
 #[derive(Clone)]
-pub struct StoreMessage {
-    payload: ValueTree,
+pub struct StoreMessage<T> {
+    payload: T,
     timestamp: SystemTime,
 }
 
-impl StoreMessage {
-    pub fn new(payload: ValueTree) -> Self {
+impl<T> StoreMessage<T> {
+    pub fn new(payload: T) -> Self {
         let timestamp = SystemTime::now();
         Self { payload, timestamp }
     }
@@ -23,32 +22,30 @@ impl StoreMessage {
     pub fn timestamp(&self) -> SystemTime {
         self.timestamp
     }
-}
 
-impl From<ValueTree> for StoreMessage {
-    fn from(value: ValueTree) -> Self {
-        StoreMessage::new(value)
-    }
-}
-
-impl Into<ValueTree> for StoreMessage {
-    fn into(self) -> ValueTree {
+    pub fn into_inner(self) -> T {
         self.payload
     }
 }
 
-type Storage = HashMap<ZId, StoreMessage>;
+impl<T> From<T> for StoreMessage<T> {
+    fn from(value: T) -> Self {
+        StoreMessage::new(value)
+    }
+}
 
-pub struct AtomicMessagesStore {
+type Storage<T> = HashMap<ZId, StoreMessage<T>>;
+
+pub struct AtomicMessagesStore<T> {
     lifespan: Duration,
-    storage: Mutex<Storage>,
+    storage: Mutex<Storage<T>>,
 }
 
 #[derive(Debug, Error)]
 #[error("poisoned lock")]
 pub struct PoisonedLockError;
 
-impl AtomicMessagesStore {
+impl<T> AtomicMessagesStore<T> {
     pub fn new(lifespan: Duration) -> Self {
         Self {
             lifespan,
@@ -56,11 +53,11 @@ impl AtomicMessagesStore {
         }
     }
 
-    pub fn acquire_storage(&self) -> Result<MutexGuard<'_, Storage>, PoisonedLockError> {
+    pub fn acquire_storage(&self) -> Result<MutexGuard<'_, Storage<T>>, PoisonedLockError> {
         self.storage.lock().map_err(|_| PoisonedLockError)
     }
 
-    pub fn store(&self, zid: ZId, payload: ValueTree) -> Result<(), PoisonedLockError> {
+    pub fn store(&self, zid: ZId, payload: T) -> Result<(), PoisonedLockError> {
         let store_message = StoreMessage::new(payload);
         self.acquire_storage()?.insert(zid, store_message);
         Ok(())
@@ -86,8 +83,10 @@ impl AtomicMessagesStore {
         });
         Ok(())
     }
+}
 
-    pub fn snapshot(&self) -> Result<Storage, PoisonedLockError> {
+impl<T: Clone> AtomicMessagesStore<T> {
+    pub fn snapshot(&self) -> Result<Storage<T>, PoisonedLockError> {
         self.acquire_storage().map(|s| s.clone())
     }
 }

@@ -3,7 +3,7 @@ mod message;
 use std::{sync::Arc, time::Duration};
 
 use yaair::yaair::{
-    messages::{inbound::InboundMessage, serializer::Serializer},
+    messages::{inbound::InboundMessage, serializer::Serializer, valuetree::ValueTree},
     network::Network,
 };
 use zenoh_pico::{keyexpr::KeyExpr, result::ZenohResult, session::Session, zid::ZId};
@@ -14,7 +14,7 @@ use crate::message::{
 };
 
 pub struct NetworkContext<S> {
-    messages: AtomicMessagesStore,
+    messages: AtomicMessagesStore<ValueTree>,
     serializer: S,
 }
 
@@ -99,7 +99,7 @@ impl<S: Serializer> Network<ZId> for ZenohPicoNetwork<'_, S> {
         log::debug!("Creating inbound message");
         let inbound_message_map = snapshot
             .into_iter()
-            .map(|(zid, message)| (zid, message.into()))
+            .map(|(zid, message)| (zid, message.into_inner()))
             .collect();
         let inbound_message = InboundMessage::new(inbound_message_map);
         log::info!("Inbound message created");
