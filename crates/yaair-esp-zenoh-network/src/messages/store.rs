@@ -8,33 +8,41 @@ use thiserror::Error;
 use zenoh_pico::zid::ZId;
 
 #[derive(Clone)]
-pub struct StoreMessage<T> {
-    payload: T,
+pub struct StoreEntity<T> {
+    message: T,
     timestamp: SystemTime,
 }
 
-impl<T> StoreMessage<T> {
-    pub fn new(payload: T) -> Self {
-        let timestamp = SystemTime::now();
-        Self { payload, timestamp }
+impl<T> StoreEntity<T> {
+    pub fn new(message: T) -> Self {
+        Self { message, timestamp: SystemTime::now() }
     }
 
     pub fn timestamp(&self) -> SystemTime {
         self.timestamp
     }
 
+    pub fn update_message(&mut self, message: T) {
+        self.message = message;
+        self.keep_alive();
+    }
+
+    pub fn keep_alive(&mut self) {
+        self.timestamp = SystemTime::now();
+    }
+
     pub fn into_inner(self) -> T {
-        self.payload
+        self.message
     }
 }
 
-impl<T> From<T> for StoreMessage<T> {
+impl<T> From<T> for StoreEntity<T> {
     fn from(value: T) -> Self {
-        StoreMessage::new(value)
+        StoreEntity::new(value)
     }
 }
 
-type Storage<T> = HashMap<ZId, StoreMessage<T>>;
+type Storage<T> = HashMap<ZId, StoreEntity<T>>;
 
 pub struct AtomicMessagesStore<T> {
     lifespan: Duration,
@@ -57,9 +65,13 @@ impl<T> AtomicMessagesStore<T> {
         self.storage.lock().map_err(|_| PoisonedLockError)
     }
 
-    pub fn store(&self, zid: ZId, payload: T) -> Result<(), PoisonedLockError> {
-        let store_message = StoreMessage::new(payload);
-        self.acquire_storage()?.insert(zid, store_message);
+    pub fn store(&self, zid: ZId, message: T) -> Result<(), PoisonedLockError> {
+        let mut storage = self.acquire_storage()?;
+        if let Some(entity) = storage.get_mut(&zid) {
+            entity.update_message(message);
+        } else {
+            storage.insert(zid, StoreEntity::new(message));
+        }
         Ok(())
     }
 
