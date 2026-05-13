@@ -1,3 +1,4 @@
+mod comm;
 mod message;
 
 use std::{sync::Arc, time::Duration};
@@ -8,9 +9,9 @@ use yaair::yaair::{
 };
 use zenoh_pico::{keyexpr::KeyExpr, result::ZenohResult, session::Session, zid::ZId};
 
-use crate::message::{
-    pubsub::{MessagePublisher, MessageSubscriber},
-    store::AtomicMessagesStore,
+use crate::{
+    comm::pubsub::{MessagePublisher, MessageSubscriber},
+    message::store::AtomicMessagesStore,
 };
 
 pub struct NetworkContext<S> {
