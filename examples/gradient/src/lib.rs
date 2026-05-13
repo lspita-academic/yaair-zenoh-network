@@ -72,7 +72,7 @@ async fn gradient_task(node: Node, session: &'static Session) {
         is_source: node.is_source(),
     };
     let mut engine = Engine::new(network, env, JsonSerializer, gradient);
-    for _ in 0..10 {
+    loop {
         match engine.cycle() {
             Ok(result) => log::info!("Gradient result: {result:?}"),
             Err(e) => log::warn!("Error during cycle: {e:?}"),
