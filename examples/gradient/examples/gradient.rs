@@ -1,7 +1,7 @@
 use std::{cmp::Ordering, collections::HashMap, thread::sleep, time::Duration};
 
 use embassy_executor::Spawner;
-use examples::{esp, zenoh};
+use examples_common::{esp, zenoh};
 use uuid::Uuid;
 use yaair::yaair::{
     aggregate::{Aggregate, AggregateError, VM},

@@ -1,0 +1,17 @@
+[package]
+name = "ping-pong"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+
+[dependencies]
+critical-section.workspace = true
+embassy-executor.workspace = true
+esp-idf-svc.workspace = true
+examples-common.workspace = true
+log.workspace = true
+postcard.workspace = true
+zenoh-pico.workspace = true
+
+[build-dependencies]
+embuild.workspace = true

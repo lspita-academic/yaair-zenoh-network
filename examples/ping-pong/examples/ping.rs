@@ -1,6 +1,7 @@
+use std::{thread, time::Duration};
+
 use embassy_executor::Spawner;
-use embassy_time::Timer;
-use examples::{esp, zenoh};
+use examples_common::{esp, zenoh};
 use zenoh_pico::{session::Session, zbytes::TryIntoZBytes};
 
 #[embassy_executor::task]
@@ -19,10 +20,10 @@ async fn ping(session: &'static Session) {
         )
         .expect("Failed to declare pong subscriber");
 
-    Timer::after_secs(2).await;
+    thread::sleep(Duration::from_secs(2));
     let mut ping = 0usize;
     loop {
-        Timer::after_secs(2).await;
+        thread::sleep(Duration::from_secs(2));
 
         log::info!("Publishing ping: {ping}");
         let bytes = postcard::to_allocvec(&ping).expect("Failed to serialize ping");
