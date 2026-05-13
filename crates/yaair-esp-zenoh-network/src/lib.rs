@@ -1,6 +1,6 @@
 mod message;
 
-use std::{marker::PhantomData, sync::Arc, time::Duration};
+use std::{sync::Arc, time::Duration};
 
 use yaair::yaair::{
     messages::{inbound::InboundMessage, serializer::Serializer},
@@ -34,11 +34,10 @@ impl Default for NetworkConfig {
 }
 
 pub struct ZenohPicoNetwork<'a, S> {
+    session: &'a Session,
     context: Arc<NetworkContext<S>>,
     messages_publisher: MessagePublisher,
     _messages_subscriber: MessageSubscriber, // store it to keep it alive
-    // the session should outlive the network to prevent being closed prematurely
-    _phantom: PhantomData<&'a Session>,
 }
 
 impl<'a, S: Serializer> ZenohPicoNetwork<'a, S> {
@@ -48,23 +47,31 @@ impl<'a, S: Serializer> ZenohPicoNetwork<'a, S> {
             serializer,
         });
 
+        let zid = session.zid();
         let messages_keyexpr = config
             .base_keyexpr
             .join_autocanonize(&KeyExpr::new("messages")?)?;
-        let messages_publisher = MessagePublisher::new(session, &messages_keyexpr)?;
+        let messages_publisher = MessagePublisher::new(
+            session,
+            &messages_keyexpr.join_autocanonize(&KeyExpr::new(&zid.to_string())?)?,
+        )?;
         let messages_subscriber =
             MessageSubscriber::new(session, &messages_keyexpr, context.clone())?;
 
         Ok(Self {
+            session,
             context,
             messages_publisher,
             _messages_subscriber: messages_subscriber,
-            _phantom: PhantomData,
         })
     }
 }
 
 impl<S: Serializer> Network<ZId> for ZenohPicoNetwork<'_, S> {
+    fn get_local_id(&self) -> ZId {
+        self.session.zid()
+    }
+
     fn prepare_outbound(&mut self, outbound_message: Vec<u8>) {
         let keyexpr = self.messages_publisher.publisher().keyexpr();
         log::info!("Publishing message to {keyexpr}");

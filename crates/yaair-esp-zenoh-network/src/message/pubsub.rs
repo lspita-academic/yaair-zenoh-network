@@ -71,12 +71,8 @@ pub struct MessagePublisher {
 }
 
 impl MessagePublisher {
-    pub fn new(session: &Session, base_keyexpr: &KeyExpr) -> ZenohResult<Self> {
-        let zid = session.zid();
-        let publisher = session.declare_publisher(
-            &base_keyexpr.join_autocanonize(&KeyExpr::new(&zid.to_string())?)?,
-            None,
-        )?;
+    pub fn new(session: &Session, keyexpr: &KeyExpr) -> ZenohResult<Self> {
+        let publisher = session.declare_publisher(&keyexpr, None)?;
         Ok(Self { publisher })
     }
 

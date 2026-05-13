@@ -71,7 +71,7 @@ async fn gradient_task(node: Node, session: &'static Session) {
         node,
         is_source: node.is_source(),
     };
-    let mut engine = Engine::new(session.zid(), network, env, JsonSerializer, gradient);
+    let mut engine = Engine::new(network, env, JsonSerializer, gradient);
     for _ in 0..10 {
         match engine.cycle() {
             Ok(result) => log::info!("Gradient result: {result:?}"),
