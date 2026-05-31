@@ -8,7 +8,7 @@ use yaair::yaair::{
     data::field::Field,
     engine::Engine,
 };
-use yaair_esp_zenoh_network::ZenohPicoNetwork;
+use yaair_zenoh_network::ZenohPicoNetwork;
 use yaair_serde::yaair_serde::json::JsonSerializer;
 use zenoh_pico::{session::Session, zid::ZId};
 
