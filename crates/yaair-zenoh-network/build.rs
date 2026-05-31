@@ -5,7 +5,7 @@ use thiserror::Error;
 #[derive(EnumString, VariantNames, Display)]
 #[strum(serialize_all = "snake_case")]
 enum ZenohImpl {
-    Zenoh,
+    ZenohFull,
     ZenohPico,
 }
 
@@ -27,7 +27,7 @@ impl ZenohImpl {
         match target_os {
             "espidf" => Ok(Self::ZenohPico),
             "none" => Err(ZenohError::UnsupportedTargetOs("none".to_owned())),
-            _ => Ok(Self::Zenoh),
+            _ => Ok(Self::ZenohFull),
         }
     }
 
