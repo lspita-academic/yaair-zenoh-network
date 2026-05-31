@@ -19,7 +19,6 @@ embassy-executor = { version = "0.10", features = [
 ] }
 embassy-sync = "0.8"
 embuild = "0.33"
-esp-idf-platform = { path = "crates/esp-idf-platform" }
 esp-idf-svc = { version = "0.52", features = [
   "embassy-sync",
   "embassy-time-driver"
