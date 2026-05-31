@@ -15,6 +15,3 @@ serde.workspace = true
 thiserror.workspace = true
 yaair.workspace = true
 zenoh-pico.workspace = true
-
-[features]
-zenoh-pico = []
