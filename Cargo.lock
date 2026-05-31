@@ -714,13 +714,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "esp-idf-config"
-version = "0.1.0"
-dependencies = [
- "embuild",
-]
-
-[[package]]
 name = "esp-idf-hal"
 version = "0.46.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"

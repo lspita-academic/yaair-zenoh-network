@@ -5,8 +5,8 @@
 .envrc
 
 # rust
-/target
-/*/target
+target/
+.cargo/
 
 # esp
 /.embuild
