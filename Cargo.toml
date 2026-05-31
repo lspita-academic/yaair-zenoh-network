@@ -42,8 +42,9 @@ thiserror = "2.0"
 uhlc = "0.9"
 uuid = "1.23"
 yaair = "0.4"
-yaair-zenoh-network = { path = "crates/yaair-zenoh-network" }
 yaair_serde = "0.2"
+yaair-zenoh-network = { path = "crates/yaair-zenoh-network" }
+zenoh = "1.9"
 zenoh-pico = { path = "crates/zenoh-pico" }
 zenoh-pico-macros = { path = "crates/zenoh-pico-macros" }
 zenoh-pico-sys = { path = "crates/zenoh-pico-sys" }
