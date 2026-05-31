@@ -14,9 +14,14 @@ log.workspace = true
 serde.workspace = true
 thiserror.workspace = true
 yaair.workspace = true
-zenoh-pico.workspace = true
 
 [build-dependencies]
 itertools.workspace = true
 strum.workspace = true
 thiserror.workspace = true
+
+[target.'cfg(all(not(target_os = "none"), not(target_os = "espidf")))'.dependencies]
+zenoh.workspace = true
+
+[target.'cfg(target_os = "espidf")'.dependencies]
+zenoh-pico.workspace = true
