@@ -4,6 +4,11 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 
+[[package.metadata.esp-idf-sys.extra_components]]
+component_dirs = ["../../lib/zenoh-pico"]
+bindings_header = "../../lib/zenoh-pico/zenoh-pico/include/zenoh-pico.h"
+bindings_module = "zenoh_pico"
+
 [dependencies]
 log.workspace = true
 postcard.workspace = true
