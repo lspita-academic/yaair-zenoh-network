@@ -24,7 +24,7 @@ examples-common.workspace = true
 log.workspace = true
 uuid.workspace = true
 yaair.workspace = true
-yaair-esp-zenoh-network.workspace = true
+yaair-zenoh-network.workspace = true
 yaair_serde.workspace = true
 zenoh-pico.workspace = true
 
