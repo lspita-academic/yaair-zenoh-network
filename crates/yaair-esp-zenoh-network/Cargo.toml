@@ -11,7 +11,6 @@ bindings_module = "zenoh_pico"
 
 [dependencies]
 log.workspace = true
-postcard.workspace = true
 serde.workspace = true
 thiserror.workspace = true
 yaair.workspace = true
