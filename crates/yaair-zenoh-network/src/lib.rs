@@ -10,16 +10,19 @@ use yaair::yaair::{
     },
     network::Network,
 };
-use zenoh_pico::{keyexpr::KeyExpr, result::ZenohResult, session::Session, zid::ZId};
 
 use crate::{
-    comm::pubsub::{MessagePublisher, MessageSubscriber, MessageSubscriberOptions},
+    comm::{
+        CommunicationLayer, MessagePublisher, MessageSubscriber, MessageSubscriberOptions,
+        TopicKeyExpr,
+        zenoh::{KeyExpr, Publisher, Session, Subscriber},
+    },
     messages::store::AtomicMessagesStore,
 };
 
-pub struct NetworkContext<S> {
+pub struct NetworkContext<Ser> {
     messages: AtomicMessagesStore<ValueTree>,
-    serializer: S,
+    serializer: Ser,
 }
 
 pub struct NetworkConfig {
@@ -30,38 +33,38 @@ pub struct NetworkConfig {
 impl Default for NetworkConfig {
     fn default() -> Self {
         Self {
-            base_keyexpr: KeyExpr::new("yaair/network/zenoh")
+            base_keyexpr: KeyExpr::declare("yaair/network/zenoh")
                 .expect("Failed to generate default base keyexpr for network"),
             lifespan: Duration::from_secs(10),
         }
     }
 }
 
-pub struct ZenohPicoNetwork<'a, S> {
+pub struct ZenohNetwork<'a, S> {
     session: &'a Session,
     context: Arc<NetworkContext<S>>,
-    messages_publisher: MessagePublisher,
-    _messages_subscriber: MessageSubscriber, // store it to keep it alive
+    messages_publisher: Publisher,
+    _messages_subscriber: Subscriber, // store it to keep it alive
 }
 
-impl<'a, S: Serializer> ZenohPicoNetwork<'a, S> {
-    pub fn new(session: &'a Session, serializer: S, config: NetworkConfig) -> ZenohResult<Self> {
+impl<'a, S: Serializer> ZenohNetwork<'a, S> {
+    pub fn new(
+        session: &'a Session,
+        serializer: S,
+        config: NetworkConfig,
+    ) -> Result<Self, <Session as CommunicationLayer>::Err> {
         let context = Arc::new(NetworkContext {
             messages: AtomicMessagesStore::new(config.lifespan),
             serializer,
         });
 
         let zid = session.zid();
-        let messages_keyexpr = config
-            .base_keyexpr
-            .join_autocanonize(&KeyExpr::new("messages")?)?;
-        let messages_publisher = MessagePublisher::new(
+        let messages_keyexpr = config.base_keyexpr.join(&KeyExpr::new("messages")?)?;
+        let messages_publisher =
+            Publisher::try_declare(session, &messages_keyexpr.declare_join(&zid.to_string())?)?;
+        let messages_subscriber = Subscriber::try_declare(
             session,
-            &messages_keyexpr.join_autocanonize(&KeyExpr::new(&zid.to_string())?)?,
-        )?;
-        let messages_subscriber = MessageSubscriber::new(
-            session,
-            &messages_keyexpr,
+            &messages_keyexpr.declare_join("*")?,
             MessageSubscriberOptions {
                 callback: Self::on_outbound_message,
                 context: context.clone(),
@@ -76,7 +79,10 @@ impl<'a, S: Serializer> ZenohPicoNetwork<'a, S> {
         })
     }
 
-    fn on_outbound_message(outbound_message: OutboundMessage<ZId>, context: &NetworkContext<S>) {
+    fn on_outbound_message(
+        outbound_message: OutboundMessage<<Session as CommunicationLayer>::Id>,
+        context: &NetworkContext<S>,
+    ) {
         log::info!("Sender: {}", outbound_message.sender);
         match context
             .messages
@@ -88,22 +94,22 @@ impl<'a, S: Serializer> ZenohPicoNetwork<'a, S> {
     }
 }
 
-impl<S: Serializer> Network<ZId> for ZenohPicoNetwork<'_, S> {
-    fn get_local_id(&self) -> ZId {
+impl<S: Serializer> Network<<Session as CommunicationLayer>::Id> for ZenohNetwork<'_, S> {
+    fn get_local_id(&self) -> <Session as CommunicationLayer>::Id {
         self.session.zid()
     }
 
     fn prepare_outbound(&mut self, outbound_message: Vec<u8>) {
-        let keyexpr = self.messages_publisher.publisher().keyexpr();
+        let keyexpr = self.messages_publisher.publishing_keyexpr();
         log::info!("Publishing message to {keyexpr}");
         log::debug!("Payload size: {}", outbound_message.len());
-        match self.messages_publisher.put(outbound_message) {
+        match self.messages_publisher.put_message(outbound_message) {
             Ok(_) => log::info!("Message published successfully"),
             Err(e) => log::warn!("Error publishing message: {e}"),
         }
     }
 
-    fn prepare_inbound(&mut self) -> InboundMessage<ZId> {
+    fn prepare_inbound(&mut self) -> InboundMessage<<Session as CommunicationLayer>::Id> {
         log::info!("Preparing inbound message");
         let messages = &self.context.messages;
         log::debug!("Preparing snapshot of messages");

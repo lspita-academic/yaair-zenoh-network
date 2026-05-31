@@ -8,7 +8,7 @@ use yaair::yaair::{
     data::field::Field,
     engine::Engine,
 };
-use yaair_zenoh_network::ZenohPicoNetwork;
+use yaair_zenoh_network::ZenohNetwork;
 use yaair_serde::yaair_serde::json::JsonSerializer;
 use zenoh_pico::{session::Session, zid::ZId};
 
@@ -64,7 +64,7 @@ fn gradient(env: &GradientEnv, vm: &mut VM<ZId, JsonSerializer>) -> Result<f32, 
 #[allow(clippy::print_stdout, clippy::print_stderr, clippy::use_debug)]
 #[embassy_executor::task]
 async fn gradient_task(node: Node, session: &'static Session) {
-    let network = ZenohPicoNetwork::new(session, JsonSerializer, Default::default())
+    let network = ZenohNetwork::new(session, JsonSerializer, Default::default())
         .expect("Failed to create zenoh network");
 
     let env = GradientEnv {
