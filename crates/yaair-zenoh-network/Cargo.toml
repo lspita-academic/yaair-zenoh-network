@@ -15,3 +15,8 @@ serde.workspace = true
 thiserror.workspace = true
 yaair.workspace = true
 zenoh-pico.workspace = true
+
+[build-dependencies]
+itertools.workspace = true
+strum.workspace = true
+thiserror.workspace = true
