@@ -15,7 +15,7 @@ use yaair::yaair::{
 use crate::{
     comm::{
         CommunicationLayer, MessagePublisher, MessageSubscriber, MessageSubscriberOptions,
-        TopicKeyExpr,
+        TopicKeyExpr, ZenohConfig,
         zenoh::{KeyExpr, Publisher, Session, Subscriber},
     },
     messages::store::AtomicMessagesStore,
@@ -24,24 +24,6 @@ use crate::{
 pub struct NetworkContext<Ser: Sync + Send> {
     messages: AtomicMessagesStore<<Session as CommunicationLayer>::Id, ValueTree>,
     serializer: Ser,
-}
-
-pub struct ZenohConfig<Id> {
-    pub scouting_timeout: Duration,
-    pub multicast_locator: Option<String>,
-    pub listen_locator: Option<String>,
-    pub id: Option<Id>,
-}
-
-impl<Id> Default for ZenohConfig<Id> {
-    fn default() -> Self {
-        Self {
-            scouting_timeout: Duration::from_secs(30),
-            multicast_locator: Default::default(),
-            listen_locator: Default::default(),
-            id: Default::default(),
-        }
-    }
 }
 
 pub struct NetworkConfig {

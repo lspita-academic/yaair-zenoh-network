@@ -6,12 +6,30 @@ pub mod zenoh;
 #[path = "zenoh_pico.rs"]
 pub mod zenoh;
 
-use std::{fmt::Display, hash::Hash, sync::Arc};
+use std::{fmt::Display, hash::Hash, sync::Arc, time::Duration};
 
 use serde::Deserialize;
 use yaair::yaair::messages::serializer::Serializer;
 
-use crate::{NetworkContext, ZenohConfig};
+use crate::NetworkContext;
+
+pub struct ZenohConfig<Id> {
+    pub scouting_timeout: Duration,
+    pub multicast_locator: Option<String>,
+    pub listen_locator: Option<String>,
+    pub id: Option<Id>,
+}
+
+impl<Id> Default for ZenohConfig<Id> {
+    fn default() -> Self {
+        Self {
+            scouting_timeout: Duration::from_secs(30),
+            multicast_locator: Default::default(),
+            listen_locator: Default::default(),
+            id: Default::default(),
+        }
+    }
+}
 
 pub trait CommunicationLayer: Sized {
     type Id: Display + Ord + Hash + Copy;

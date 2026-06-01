@@ -8,12 +8,9 @@ use zenoh::{
 };
 pub use zenoh::{Session, key_expr::OwnedKeyExpr as KeyExpr};
 
-use crate::{
-    ZenohConfig,
-    comm::{
-        CommunicationLayer, MessagePublisher, MessageSubscriber, MessageSubscriberOptions,
-        TopicKeyExpr,
-    },
+use crate::comm::{
+    CommunicationLayer, MessagePublisher, MessageSubscriber, MessageSubscriberOptions,
+    TopicKeyExpr, ZenohConfig,
 };
 
 pub type Publisher = ZenohPublisher<'static>;
