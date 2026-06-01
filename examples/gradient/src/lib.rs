@@ -21,9 +21,9 @@ impl Node {
     fn node_id(&self) -> ZenohNodeID {
         let value = match self {
             // full sequence cannot start with 0
-            Self::Node1 => 1,
-            Self::Node2 => 2,
-            Self::Node3 => 3,
+            Self::Node1 => 0x11,
+            Self::Node2 => 0x22,
+            Self::Node3 => 0x33,
         };
         array::repeat(value).into()
     }
