@@ -40,6 +40,12 @@ impl From<Uuid> for ZId {
     }
 }
 
+impl From<ZId> for Uuid {
+    fn from(value: ZId) -> Self {
+        Self::from_bytes(value.id)
+    }
+}
+
 #[zwrap(base(name = "closure_zid"), zvalue, zown, zclosure(callback_ty = <ZId as ZValue>::Value))]
 pub struct ZIdClosure;
 
