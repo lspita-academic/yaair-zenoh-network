@@ -10,6 +10,7 @@ bindings_header = "../../lib/zenoh-pico/zenoh-pico/include/zenoh-pico.h"
 bindings_module = "zenoh_pico"
 
 [dependencies]
+hex.workspace = true
 log.workspace = true
 maybe-owned.workspace = true
 serde.workspace = true

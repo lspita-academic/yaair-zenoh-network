@@ -18,7 +18,8 @@ embassy-executor = { version = "0.10", features = [
   "platform-std"
 ] }
 embassy-sync = "0.8"
-embuild = "0.33"
+embuild = { version = "0.33", features = ["default", "espidf"] }
+env_logger = "0.11"
 esp-idf-svc = { version = "0.52", features = [
   "embassy-sync",
   "embassy-time-driver"
@@ -26,6 +27,7 @@ esp-idf-svc = { version = "0.52", features = [
 examples-common = { path = "examples/common" }
 ffi-utils = { path = "crates/ffi-utils" }
 heapless = "0.9"
+hex = "0.4"
 itertools = "0.14.0"
 log = "0.4"
 macro-utils = { path = "crates/macro-utils" }
@@ -41,7 +43,6 @@ strum = { version = "0.28", features = ["default", "derive"] }
 syn = "2.0"
 thiserror = "2.0"
 uhlc = "0.9"
-uuid = "1.23"
 yaair = "0.4"
 yaair_serde = "0.2"
 yaair-zenoh-network = { path = "crates/yaair-zenoh-network" }

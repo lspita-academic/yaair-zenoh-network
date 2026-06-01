@@ -1,5 +1,8 @@
 use std::{
-    collections::HashMap, hash::Hash, sync::{Mutex, MutexGuard}, time::{Duration, SystemTime}
+    collections::HashMap,
+    hash::Hash,
+    sync::{Mutex, MutexGuard},
+    time::{Duration, SystemTime},
 };
 
 use thiserror::Error;
@@ -12,7 +15,10 @@ pub struct StoreEntity<T> {
 
 impl<T> StoreEntity<T> {
     pub fn new(message: T) -> Self {
-        Self { message, timestamp: SystemTime::now() }
+        Self {
+            message,
+            timestamp: SystemTime::now(),
+        }
     }
 
     pub fn timestamp(&self) -> SystemTime {
