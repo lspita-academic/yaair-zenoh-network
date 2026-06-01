@@ -8,14 +8,14 @@ rust-version.workspace = true
 log.workspace = true
 static_cell.workspace = true
 thiserror.workspace = true
-uuid.workspace = true
+
+[build-dependencies]
+embuild.workspace = true
+
+[target.'cfg(not(target_os = "espidf"))'.dependencies]
+env_logger.workspace = true
 
 [target.'cfg(target_os = "espidf")'.dependencies]
 critical-section.workspace = true
 esp-idf-svc.workspace = true
 heapless.workspace = true
-zenoh-pico.workspace = true
-
-
-[build-dependencies]
-embuild.workspace = true

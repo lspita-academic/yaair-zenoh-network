@@ -5,13 +5,16 @@ edition.workspace = true
 rust-version.workspace = true
 
 [dependencies]
-critical-section.workspace = true
 embassy-executor.workspace = true
-esp-idf-svc.workspace = true
 examples-common.workspace = true
 log.workspace = true
 postcard.workspace = true
-zenoh-pico.workspace = true
+static_cell.workspace = true
 
 [build-dependencies]
 embuild.workspace = true
+
+[target.'cfg(target_os = "espidf")'.dependencies]
+critical-section.workspace = true
+esp-idf-svc.workspace = true
+zenoh-pico.workspace = true

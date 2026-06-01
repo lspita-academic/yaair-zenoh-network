@@ -1,2 +1,13 @@
+#[cfg(target_os = "espidf")]
 pub mod esp;
-pub mod zenoh;
+
+#[cfg(target_os = "espidf")]
+pub fn init() {
+    esp_idf_svc::sys::link_patches();
+    esp_idf_svc::log::init_from_env();
+}
+
+#[cfg(not(target_os = "espidf"))]
+pub fn init() {
+    env_logger::init();
+}

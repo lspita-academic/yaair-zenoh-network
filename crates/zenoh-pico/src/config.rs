@@ -3,7 +3,6 @@ use std::{borrow::Borrow, collections::BTreeMap, ffi::CString, time::Duration};
 use ffi_utils::cstring::CStringExtensions;
 use num_enum::{IntoPrimitive, TryFromPrimitive, UnsafeFromPrimitive};
 use strum::{Display, EnumString};
-use uuid::Uuid;
 use zenoh_pico_macros::zwrap;
 use zenoh_pico_sys::{
     Z_CONFIG_CONNECT_KEY, Z_CONFIG_LISTEN_KEY, Z_CONFIG_MODE_KEY, Z_CONFIG_MULTICAST_LOCATOR_KEY,
@@ -14,6 +13,7 @@ use zenoh_pico_sys::{
 use crate::{
     entities::whatami::WhatAmIMask,
     result::{IntoZenohResult, ZenohResult},
+    zid::ZId,
     zvalue::{ZOwn, ZValue},
 };
 
@@ -101,7 +101,7 @@ impl ConfigBuilder {
         self
     }
 
-    pub fn session_zid(mut self, zid: Uuid) -> Self {
+    pub fn session_zid(mut self, zid: ZId) -> Self {
         self.options.insert(ConfigKey::SessionZId, zid.to_string());
         self
     }

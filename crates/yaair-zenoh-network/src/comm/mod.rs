@@ -8,36 +8,60 @@ pub mod zenoh;
 
 use std::{fmt::Display, hash::Hash, sync::Arc, time::Duration};
 
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use yaair::yaair::messages::serializer::Serializer;
 
 use crate::NetworkContext;
 
-pub struct ZenohConfig<Id> {
-    pub scouting_timeout: Duration,
-    pub multicast_locator: Option<String>,
-    pub listen_locator: Option<String>,
-    pub id: Option<Id>,
+pub type ZenohNodeIDBytes = [u8; 16];
+
+#[derive(Serialize, Deserialize, Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
+pub struct ZenohNodeID(ZenohNodeIDBytes);
+
+impl ZenohNodeID {
+    pub fn as_bytes(&self) -> &ZenohNodeIDBytes {
+        &self.0
+    }
+
+    pub fn into_bytes(self) -> ZenohNodeIDBytes {
+        self.0
+    }
 }
 
-impl<Id> Default for ZenohConfig<Id> {
+impl From<ZenohNodeIDBytes> for ZenohNodeID {
+    fn from(value: ZenohNodeIDBytes) -> Self {
+        Self(value)
+    }
+}
+
+impl Display for ZenohNodeID {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        hex::encode(&self.0).fmt(f)
+    }
+}
+
+pub struct ZenohConfig {
+    pub scouting_timeout: Duration,
+    pub interface: Option<String>,
+    pub id: Option<ZenohNodeID>,
+}
+
+impl Default for ZenohConfig {
     fn default() -> Self {
         Self {
             scouting_timeout: Duration::from_secs(30),
-            multicast_locator: Default::default(),
-            listen_locator: Default::default(),
+            interface: Default::default(),
             id: Default::default(),
         }
     }
 }
 
 pub trait CommunicationLayer: Sized {
-    type Id: Display + Ord + Hash + Copy;
     type Err;
     type KeyExpr: TopicKeyExpr<Self>;
 
-    fn init(zenoh_config: ZenohConfig<Self::Id>) -> Result<Self, Self::Err>;
-    fn node_id(&self) -> Self::Id;
+    fn init(zenoh_config: ZenohConfig) -> Result<Self, Self::Err>;
+    fn node_id(&self) -> ZenohNodeID;
 }
 
 pub trait TopicKeyExpr<Comm: CommunicationLayer>: Sized {

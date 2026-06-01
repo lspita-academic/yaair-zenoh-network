@@ -8,7 +8,6 @@ use serde::{
     de::{self, Visitor},
     ser::SerializeStruct,
 };
-use uuid::Uuid;
 use zenoh_pico_macros::zwrap;
 use zenoh_pico_sys::{_z_id_cmp, _z_id_hash, _z_id_t, ZENOH_ID_SIZE, z_id_to_string};
 
@@ -31,18 +30,6 @@ impl ZId {
 impl From<ZIdBytes> for ZId {
     fn from(value: ZIdBytes) -> Self {
         Self::from_zvalue(_z_id_t { id: value })
-    }
-}
-
-impl From<Uuid> for ZId {
-    fn from(value: Uuid) -> Self {
-        Self::from(value.into_bytes())
-    }
-}
-
-impl From<ZId> for Uuid {
-    fn from(value: ZId) -> Self {
-        Self::from_bytes(value.id)
     }
 }
 

@@ -18,34 +18,47 @@ pub use zenoh_pico::{
     },
 };
 
-use crate::comm::{
-    CommunicationLayer, MessagePublisher, MessageSubscriber, MessageSubscriberOptions,
-    TopicKeyExpr, ZenohConfig,
+use crate::{
+    ZenohNodeID,
+    comm::{
+        CommunicationLayer, MessagePublisher, MessageSubscriber, MessageSubscriberOptions,
+        TopicKeyExpr, ZenohConfig,
+    },
 };
 
+impl From<ZId> for ZenohNodeID {
+    fn from(value: ZId) -> Self {
+        Self::from(value.id)
+    }
+}
+
 impl CommunicationLayer for Session {
-    type Id = ZId;
     type Err = ZenohError;
     type KeyExpr = KeyExpr;
 
-    fn init(zenoh_config: ZenohConfig<Self::Id>) -> Result<Self, Self::Err> {
+    fn init(zenoh_config: ZenohConfig) -> Result<Self, Self::Err> {
         let mut config_builder = ConfigBuilder::default()
             .mode(ConfigMode::Peer)
             .scouting_timeout(zenoh_config.scouting_timeout);
-        if let Some(locator) = zenoh_config.multicast_locator {
-            config_builder = config_builder.multicast_locator(&locator);
+
+        let mut multicast_locator = String::from("udp/224.0.0.224:7446");
+        let mut listen_locator = String::from("udp/224.0.0.224:7447");
+        if let Some(interface) = zenoh_config.interface {
+            multicast_locator.push_str(&format!("#iface={interface}"));
+            listen_locator.push_str(&format!("#iface={interface}"));
         }
-        if let Some(locator) = zenoh_config.listen_locator {
-            config_builder = config_builder.listen(&locator);
-        }
+        config_builder = config_builder.multicast_locator(&multicast_locator);
+        config_builder = config_builder.listen(&listen_locator);
+
         if let Some(id) = zenoh_config.id {
-            config_builder = config_builder.session_zid(id.into());
+            config_builder = config_builder.session_zid(id.into_bytes().into());
         }
+
         config_builder.build().and_then(|c| Self::open(c, None))
     }
 
-    fn node_id(&self) -> Self::Id {
-        self.zid()
+    fn node_id(&self) -> ZenohNodeID {
+        self.zid().into()
     }
 }
 

@@ -1,53 +1,14 @@
-use std::{thread, time::Duration};
+#[cfg(target_os = "espidf")]
+#[embassy_executor::main]
+async fn main(spawner: embassy_executor::Spawner) {
+    examples_common::init();
 
-use embassy_executor::Spawner;
-use examples_common::{esp, zenoh};
-use zenoh_pico::{session::Session, zbytes::TryIntoZBytes};
-
-#[embassy_executor::task]
-async fn pong(session: &'static Session) {
-    log::info!("Starting pong task");
-    let publisher = session
-        .declare_publisher(
-            &"pong/value".parse().expect("Pong keyexpr should be valid"),
-            None,
-        )
-        .expect("Failed to declare pong publisher");
-    let subscriber = session
-        .declare_subscriber_async(
-            &"ping/value".parse().expect("Ping keyexpr should be valid"),
-            None,
-        )
-        .expect("Failed to declare ping subscriber");
-
-    loop {
-        log::info!("Waiting ping");
-        let sample = subscriber.recv_async().await;
-        let bytes = sample.payload().owned_bytes();
-        log::info!("Serialized ping size: {}", bytes.len());
-        let ping: usize = postcard::from_bytes(&bytes).expect("Failed to deserialize ping");
-        log::info!("Received ping: {ping}");
-
-        thread::sleep(Duration::from_secs(2));
-
-        let pong = ping + 1;
-        log::info!("Publishing pong: {pong}");
-        let bytes = postcard::to_allocvec(&pong).expect("Failed to serialize pong");
-        log::info!("Serialized pong size: {}", bytes.len());
-        let payload = bytes
-            .try_into_zbytes()
-            .expect("Failed to create pong payload");
-        publisher
-            .put(payload, None)
-            .expect("Failed to publish pong");
-        log::info!("Published pong");
-    }
+    let wifi = examples_common::esp::start_wifi().await;
+    let session = ping_pong_example::start_zenoh_session(wifi.netif().get_name());
+    spawner.spawn(ping_pong_example::pong::pong(session).expect("Failed to create pong task"));
 }
 
-#[embassy_executor::main]
-async fn main(spawner: Spawner) {
-    esp::init();
-    let wifi = esp::start_wifi().await;
-    let session = zenoh::start_session(wifi.netif().get_name(), None);
-    spawner.spawn(pong(session).expect("Failed to create pong task"));
+#[cfg(not(target_os = "espidf"))]
+fn main() {
+    panic!("This example is for esp-idf targets only");
 }
