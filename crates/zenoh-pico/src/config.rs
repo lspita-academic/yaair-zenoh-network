@@ -102,7 +102,29 @@ impl ConfigBuilder {
     }
 
     pub fn session_zid(mut self, zid: ZId) -> Self {
-        self.options.insert(ConfigKey::SessionZId, zid.to_string());
+        let bytes_string = hex::encode(zid.into_bytes());
+
+        // The function that parses the config string into a uuid doesn't correctly
+        // follow the uuidv4 specification, so manual conversion is needed
+        //
+        // RFC 4122:        XXXXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXXX (8-4-4-4-12)
+        // zenoh pico uuid: XXXXXXXX-XXXX-XXXX-XX-XXXXXXXXXXXXXX (8-4-4-2-14)
+        //
+        // Permalink to the implementation:
+        // https://github.com/eclipse-zenoh/zenoh-pico/blob/07c84ebcf926114bffbf70edd82f3d71919c3868/src/utils/uuid.c#L26
+        //
+        // Opened issue:
+        // https://github.com/eclipse-zenoh/zenoh-pico/issues/1229
+
+        let uuid_string = [
+            &bytes_string[..8],    // 8
+            &bytes_string[8..12],  // 4
+            &bytes_string[12..16], // 4
+            &bytes_string[16..18], // 2
+            &bytes_string[18..],   // 14
+        ]
+        .join("-");
+        self.options.insert(ConfigKey::SessionZId, uuid_string);
         self
     }
 
