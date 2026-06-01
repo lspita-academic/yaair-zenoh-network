@@ -11,13 +11,14 @@ use std::{fmt::Display, hash::Hash, sync::Arc};
 use serde::Deserialize;
 use yaair::yaair::messages::serializer::Serializer;
 
-use crate::NetworkContext;
+use crate::{NetworkContext, ZenohConfig};
 
 pub trait CommunicationLayer: Sized {
     type Id: Display + Ord + Hash + Copy;
     type Err;
     type KeyExpr: TopicKeyExpr<Self>;
 
+    fn init(zenoh_config: ZenohConfig<Self::Id>) -> Result<Self, Self::Err>;
     fn node_id(&self) -> Self::Id;
 }
 

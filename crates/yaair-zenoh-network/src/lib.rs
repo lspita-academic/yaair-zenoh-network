@@ -3,6 +3,7 @@ mod messages;
 
 use std::{sync::Arc, time::Duration};
 
+use maybe_owned::MaybeOwned;
 use yaair::yaair::{
     messages::{
         inbound::InboundMessage, outbound::OutboundMessage, serializer::Serializer,
@@ -25,6 +26,24 @@ pub struct NetworkContext<Ser: Sync + Send> {
     serializer: Ser,
 }
 
+pub struct ZenohConfig<Id> {
+    pub scouting_timeout: Duration,
+    pub multicast_locator: Option<String>,
+    pub listen_locator: Option<String>,
+    pub id: Option<Id>,
+}
+
+impl<Id> Default for ZenohConfig<Id> {
+    fn default() -> Self {
+        Self {
+            scouting_timeout: Duration::from_secs(30),
+            multicast_locator: Default::default(),
+            listen_locator: Default::default(),
+            id: Default::default(),
+        }
+    }
+}
+
 pub struct NetworkConfig {
     pub base_keyexpr: KeyExpr,
     pub lifespan: Duration,
@@ -41,7 +60,7 @@ impl Default for NetworkConfig {
 }
 
 pub struct ZenohNetwork<'a, Ser: Sync + Send> {
-    session: &'a Session,
+    session: MaybeOwned<'a, Session>,
     context: Arc<NetworkContext<Ser>>,
     messages_publisher: Publisher,
     _messages_subscriber: Subscriber, // store it to keep it alive
@@ -49,21 +68,30 @@ pub struct ZenohNetwork<'a, Ser: Sync + Send> {
 
 impl<'a, Ser: Serializer + Sync + Send + 'static> ZenohNetwork<'a, Ser> {
     pub fn new(
-        session: &'a Session,
         serializer: Ser,
-        config: NetworkConfig,
+        network_config: NetworkConfig,
+        zenoh_config: ZenohConfig<<Session as CommunicationLayer>::Id>,
+    ) -> Result<Self, <Session as CommunicationLayer>::Err> {
+        let session = Session::init(zenoh_config)?;
+        Self::from_zenoh_session(MaybeOwned::Owned(session), serializer, network_config)
+    }
+
+    pub fn from_zenoh_session(
+        session: MaybeOwned<'a, Session>,
+        serializer: Ser,
+        network_config: NetworkConfig,
     ) -> Result<Self, <Session as CommunicationLayer>::Err> {
         let context = Arc::new(NetworkContext {
-            messages: AtomicMessagesStore::new(config.lifespan),
+            messages: AtomicMessagesStore::new(network_config.lifespan),
             serializer,
         });
 
         let zid = session.zid();
-        let messages_keyexpr = config.base_keyexpr.declare_join("messages")?;
+        let messages_keyexpr = network_config.base_keyexpr.declare_join("messages")?;
         let messages_publisher =
-            Publisher::try_declare(session, messages_keyexpr.declare_join(&zid.to_string())?)?;
+            Publisher::try_declare(&session, messages_keyexpr.declare_join(&zid.to_string())?)?;
         let messages_subscriber = Subscriber::try_declare_background(
-            session,
+            &session,
             messages_keyexpr.declare_join("*")?,
             MessageSubscriberOptions {
                 callback: Self::on_outbound_message,

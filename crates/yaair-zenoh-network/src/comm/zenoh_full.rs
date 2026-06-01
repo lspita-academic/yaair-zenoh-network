@@ -1,15 +1,19 @@
 use serde::Deserialize;
 use yaair::yaair::messages::serializer::Serializer;
 use zenoh::{
-    Error, Wait,
+    Config, Error, Wait,
     config::ZenohId,
     pubsub::{Publisher as ZenohPublisher, Subscriber as ZenohSubscriber},
     sample::Sample,
 };
 pub use zenoh::{Session, key_expr::OwnedKeyExpr as KeyExpr};
 
-use crate::comm::{
-    CommunicationLayer, MessagePublisher, MessageSubscriber, MessageSubscriberOptions, TopicKeyExpr,
+use crate::{
+    ZenohConfig,
+    comm::{
+        CommunicationLayer, MessagePublisher, MessageSubscriber, MessageSubscriberOptions,
+        TopicKeyExpr,
+    },
 };
 
 pub type Publisher = ZenohPublisher<'static>;
@@ -19,6 +23,25 @@ impl CommunicationLayer for Session {
     type Id = ZenohId;
     type Err = Error;
     type KeyExpr = KeyExpr;
+
+    fn init(zenoh_config: ZenohConfig<Self::Id>) -> Result<Self, Self::Err> {
+        let mut config = Config::default();
+        config.insert_json5("mode", "peer")?;
+        config.insert_json5(
+            "scouting/timeout",
+            &zenoh_config.scouting_timeout.as_millis().to_string(),
+        )?;
+        if let Some(locator) = zenoh_config.multicast_locator {
+            config.insert_json5("scouting/multicast/address", &locator)?;
+        }
+        if let Some(locator) = zenoh_config.listen_locator {
+            config.insert_json5("listen/endpoints", &format!("[\"{locator}\"]"))?;
+        }
+        if let Some(id) = zenoh_config.id {
+            config.insert_json5("id", &id.to_string())?;
+        }
+        zenoh::open(config).wait()
+    }
 
     fn node_id(&self) -> Self::Id {
         self.zid()
