@@ -1,3 +1,5 @@
+#![cfg(target_os = "espidf")]
+
 pub mod config;
 pub mod entities;
 pub mod keyexpr;

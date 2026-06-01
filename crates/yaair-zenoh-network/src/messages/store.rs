@@ -1,11 +1,8 @@
 use std::{
-    collections::HashMap,
-    sync::{Mutex, MutexGuard},
-    time::{Duration, SystemTime},
+    collections::HashMap, hash::Hash, sync::{Mutex, MutexGuard}, time::{Duration, SystemTime}
 };
 
 use thiserror::Error;
-use zenoh_pico::zid::ZId;
 
 #[derive(Clone)]
 pub struct StoreEntity<T> {
@@ -42,18 +39,18 @@ impl<T> From<T> for StoreEntity<T> {
     }
 }
 
-type Storage<T> = HashMap<ZId, StoreEntity<T>>;
+type Storage<Id, T> = HashMap<Id, StoreEntity<T>>;
 
-pub struct AtomicMessagesStore<T> {
+pub struct AtomicMessagesStore<Id, T> {
     lifespan: Duration,
-    storage: Mutex<Storage<T>>,
+    storage: Mutex<Storage<Id, T>>,
 }
 
 #[derive(Debug, Error)]
 #[error("poisoned lock")]
 pub struct PoisonedLockError;
 
-impl<T> AtomicMessagesStore<T> {
+impl<Id: Eq + Hash + Clone, T> AtomicMessagesStore<Id, T> {
     pub fn new(lifespan: Duration) -> Self {
         Self {
             lifespan,
@@ -61,16 +58,16 @@ impl<T> AtomicMessagesStore<T> {
         }
     }
 
-    pub fn acquire_storage(&self) -> Result<MutexGuard<'_, Storage<T>>, PoisonedLockError> {
+    pub fn acquire_storage(&self) -> Result<MutexGuard<'_, Storage<Id, T>>, PoisonedLockError> {
         self.storage.lock().map_err(|_| PoisonedLockError)
     }
 
-    pub fn store(&self, zid: ZId, message: T) -> Result<(), PoisonedLockError> {
+    pub fn store(&self, id: Id, message: T) -> Result<(), PoisonedLockError> {
         let mut storage = self.acquire_storage()?;
-        if let Some(entity) = storage.get_mut(&zid) {
+        if let Some(entity) = storage.get_mut(&id) {
             entity.update_message(message);
         } else {
-            storage.insert(zid, StoreEntity::new(message));
+            storage.insert(id, StoreEntity::new(message));
         }
         Ok(())
     }
@@ -97,8 +94,8 @@ impl<T> AtomicMessagesStore<T> {
     }
 }
 
-impl<T: Clone> AtomicMessagesStore<T> {
-    pub fn snapshot(&self) -> Result<Storage<T>, PoisonedLockError> {
+impl<Id: Eq + Hash + Clone, T: Clone> AtomicMessagesStore<Id, T> {
+    pub fn snapshot(&self) -> Result<Storage<Id, T>, PoisonedLockError> {
         self.acquire_storage().map(|s| s.clone())
     }
 }

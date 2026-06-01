@@ -14,5 +14,7 @@ strum.workspace = true
 thiserror.workspace = true
 uhlc.workspace = true
 uuid.workspace = true
+
+[target.'cfg(target_os = "espidf")'.dependencies]
 zenoh-pico-macros.workspace = true
 zenoh-pico-sys.workspace = true

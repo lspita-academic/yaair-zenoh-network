@@ -20,8 +20,8 @@ use crate::{
     messages::store::AtomicMessagesStore,
 };
 
-pub struct NetworkContext<Ser> {
-    messages: AtomicMessagesStore<ValueTree>,
+pub struct NetworkContext<Ser: Sync + Send> {
+    messages: AtomicMessagesStore<<Session as CommunicationLayer>::Id, ValueTree>,
     serializer: Ser,
 }
 
@@ -33,24 +33,24 @@ pub struct NetworkConfig {
 impl Default for NetworkConfig {
     fn default() -> Self {
         Self {
-            base_keyexpr: KeyExpr::declare("yaair/network/zenoh")
+            base_keyexpr: KeyExpr::declare_topic("yaair/network/zenoh")
                 .expect("Failed to generate default base keyexpr for network"),
             lifespan: Duration::from_secs(10),
         }
     }
 }
 
-pub struct ZenohNetwork<'a, S> {
+pub struct ZenohNetwork<'a, Ser: Sync + Send> {
     session: &'a Session,
-    context: Arc<NetworkContext<S>>,
+    context: Arc<NetworkContext<Ser>>,
     messages_publisher: Publisher,
     _messages_subscriber: Subscriber, // store it to keep it alive
 }
 
-impl<'a, S: Serializer> ZenohNetwork<'a, S> {
+impl<'a, Ser: Serializer + Sync + Send + 'static> ZenohNetwork<'a, Ser> {
     pub fn new(
         session: &'a Session,
-        serializer: S,
+        serializer: Ser,
         config: NetworkConfig,
     ) -> Result<Self, <Session as CommunicationLayer>::Err> {
         let context = Arc::new(NetworkContext {
@@ -59,12 +59,12 @@ impl<'a, S: Serializer> ZenohNetwork<'a, S> {
         });
 
         let zid = session.zid();
-        let messages_keyexpr = config.base_keyexpr.join(&KeyExpr::new("messages")?)?;
+        let messages_keyexpr = config.base_keyexpr.declare_join("messages")?;
         let messages_publisher =
-            Publisher::try_declare(session, &messages_keyexpr.declare_join(&zid.to_string())?)?;
-        let messages_subscriber = Subscriber::try_declare(
+            Publisher::try_declare(session, messages_keyexpr.declare_join(&zid.to_string())?)?;
+        let messages_subscriber = Subscriber::try_declare_background(
             session,
-            &messages_keyexpr.declare_join("*")?,
+            messages_keyexpr.declare_join("*")?,
             MessageSubscriberOptions {
                 callback: Self::on_outbound_message,
                 context: context.clone(),
@@ -81,7 +81,7 @@ impl<'a, S: Serializer> ZenohNetwork<'a, S> {
 
     fn on_outbound_message(
         outbound_message: OutboundMessage<<Session as CommunicationLayer>::Id>,
-        context: &NetworkContext<S>,
+        context: &NetworkContext<Ser>,
     ) {
         log::info!("Sender: {}", outbound_message.sender);
         match context
@@ -94,14 +94,14 @@ impl<'a, S: Serializer> ZenohNetwork<'a, S> {
     }
 }
 
-impl<S: Serializer> Network<<Session as CommunicationLayer>::Id> for ZenohNetwork<'_, S> {
+impl<Ser: Serializer + Sync + Send> Network<<Session as CommunicationLayer>::Id>
+    for ZenohNetwork<'_, Ser>
+{
     fn get_local_id(&self) -> <Session as CommunicationLayer>::Id {
         self.session.zid()
     }
 
     fn prepare_outbound(&mut self, outbound_message: Vec<u8>) {
-        let keyexpr = self.messages_publisher.publishing_keyexpr();
-        log::info!("Publishing message to {keyexpr}");
         log::debug!("Payload size: {}", outbound_message.len());
         match self.messages_publisher.put_message(outbound_message) {
             Ok(_) => log::info!("Message published successfully"),
