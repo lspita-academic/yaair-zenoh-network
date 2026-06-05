@@ -18,14 +18,17 @@ use yaair::yaair::{
     },
     network::Network,
 };
-use zenoh_pico::keyexpr::KeyExpr;
+use zenoh::comm::KeyExpr;
 
 pub use crate::comm::ZenohNodeId;
 use crate::{
     comm::{
         CommunicationLayer, MessagePublisher, MessageSubscriber, MessageSubscriberOptions,
         TopicKeyExpr,
-    }, config::NetworkConfig, messages::store::AtomicMessagesStore, zenoh::comm::{Publisher, Session, Subscriber}
+    },
+    config::NetworkConfig,
+    messages::store::AtomicMessagesStore,
+    zenoh::comm::{Publisher, Session, Subscriber},
 };
 
 pub struct NetworkContext<Ser: Sync + Send> {
