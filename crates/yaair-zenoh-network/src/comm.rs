@@ -1,11 +1,3 @@
-#[cfg(zenoh_impl = "zenoh_full")]
-#[path = "zenoh_full.rs"]
-pub mod zenoh;
-
-#[cfg(zenoh_impl = "zenoh_pico")]
-#[path = "zenoh_pico.rs"]
-pub mod zenoh;
-
 use std::{fmt::Display, hash::Hash, sync::Arc};
 
 use serde::{Deserialize, Serialize};
@@ -16,9 +8,9 @@ use crate::NetworkContext;
 pub type ZenohNodeIDBytes = [u8; 16];
 
 #[derive(Serialize, Deserialize, Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
-pub struct ZenohNodeID(ZenohNodeIDBytes);
+pub struct ZenohNodeId(ZenohNodeIDBytes);
 
-impl ZenohNodeID {
+impl ZenohNodeId {
     pub fn as_bytes(&self) -> &ZenohNodeIDBytes {
         &self.0
     }
@@ -28,13 +20,21 @@ impl ZenohNodeID {
     }
 }
 
-impl From<ZenohNodeIDBytes> for ZenohNodeID {
+pub(crate) trait FromZenohNodeId {
+    fn from_node_id(node_id: ZenohNodeId) -> Self;
+}
+
+pub(crate) trait IntoZenohNodeId {
+    fn into_node_id(self) -> ZenohNodeId;
+}
+
+impl From<ZenohNodeIDBytes> for ZenohNodeId {
     fn from(value: ZenohNodeIDBytes) -> Self {
         Self(value)
     }
 }
 
-impl Display for ZenohNodeID {
+impl Display for ZenohNodeId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         hex::encode(&self.0).fmt(f)
     }
@@ -46,7 +46,7 @@ pub trait CommunicationLayer: Sized {
     type KeyExpr: TopicKeyExpr<Self>;
 
     fn init(zenoh_config: Self::Config) -> Result<Self, Self::Err>;
-    fn node_id(&self) -> ZenohNodeID;
+    fn node_id(&self) -> ZenohNodeId;
 }
 
 pub trait TopicKeyExpr<Comm: CommunicationLayer>: Sized {

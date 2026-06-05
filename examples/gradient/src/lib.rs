@@ -5,10 +5,16 @@ use examples_common;
 use yaair::yaair::{
     aggregate::{Aggregate, AggregateError, VM},
     data::field::Field,
-    engine::Engine, network::Network,
+    engine::Engine,
+    network::Network,
 };
 use yaair_serde::yaair_serde::json::JsonSerializer;
-use yaair_zenoh_network::{ZenohConfig, ZenohNetwork, ZenohNodeID};
+#[cfg(not(target_os = "espidf"))]
+use yaair_zenoh_network::config::ConfigBuilderDefault;
+use yaair_zenoh_network::{
+    ZenohNetwork, ZenohNodeId,
+    config::{ConfigBuilder, ZenohConfig, ZenohConfigBuilder, ZenohConfigBuilderOptions},
+};
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Node {
@@ -18,7 +24,7 @@ pub enum Node {
 }
 
 impl Node {
-    fn node_id(&self) -> ZenohNodeID {
+    fn node_id(&self) -> ZenohNodeId {
         let value = match self {
             // full sequence cannot start with 0
             Self::Node1 => 0x11,
@@ -39,7 +45,7 @@ struct GradientEnv {
 }
 
 impl GradientEnv {
-    fn distances(&self) -> Field<ZenohNodeID, f32> {
+    fn distances(&self) -> Field<ZenohNodeId, f32> {
         match self.node {
             Node::Node1 => Field::new(0.0, HashMap::from([(Node::Node2.node_id(), 1.0)])),
             Node::Node2 => Field::new(
@@ -53,7 +59,7 @@ impl GradientEnv {
 
 fn gradient(
     env: &GradientEnv,
-    vm: &mut VM<ZenohNodeID, JsonSerializer>,
+    vm: &mut VM<ZenohNodeId, JsonSerializer>,
 ) -> Result<f32, AggregateError> {
     let initial = f32::MAX;
     vm.share(&initial, |_, field| {
@@ -67,7 +73,7 @@ fn gradient(
 #[allow(clippy::print_stdout, clippy::print_stderr, clippy::use_debug)]
 #[embassy_executor::task]
 async fn gradient_task(node: Node, zenoh_config: ZenohConfig) {
-    let network = ZenohNetwork::new(JsonSerializer, Default::default(), zenoh_config)
+    let network = ZenohNetwork::new(JsonSerializer, zenoh_config.into())
         .expect("Failed to create zenoh network");
     log::info!("Network id: {}", network.get_local_id());
 
@@ -89,20 +95,22 @@ pub async fn gradient_main(node: Node, spawner: Spawner) {
     examples_common::init();
 
     #[cfg(target_os = "espidf")]
-    let interface = {
+    let zenoh_config_builder = {
         let wifi = examples_common::esp::start_wifi().await;
-        let if_name = wifi.netif().get_name().to_string();
-        Some(if_name)
+        let interface = wifi.netif().get_name().to_string();
+        ZenohConfigBuilder::new(ZenohConfigBuilderOptions {
+            interface: interface.into(),
+        })
     };
     #[cfg(not(target_os = "espidf"))]
-    let interface = None;
+    let zenoh_config_builder = ConfigBuilderDefault::default();
 
     let node_id = node.node_id();
     log::info!("Node id: {node_id}");
-    let zenoh_config = ZenohConfig {
-        interface,
-        id: Some(node_id),
-        ..Default::default()
-    };
+
+    let zenoh_config = zenoh_config_builder
+        .id(node_id)
+        .build()
+        .expect("Failed to create zenoh config");
     spawner.spawn(gradient_task(node, zenoh_config).expect("Failed to create gradient task"));
 }

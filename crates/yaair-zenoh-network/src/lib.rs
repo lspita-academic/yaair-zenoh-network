@@ -1,6 +1,13 @@
 mod comm;
-mod config;
+pub mod config;
 mod messages;
+#[cfg(zenoh_impl = "zenoh_full")]
+#[path = "zenoh_full/mod.rs"]
+mod zenoh;
+
+#[cfg(zenoh_impl = "zenoh_pico")]
+#[path = "zenoh_pico/mod.rs"]
+mod zenoh;
 
 use std::sync::Arc;
 
@@ -13,24 +20,16 @@ use yaair::yaair::{
 };
 use zenoh_pico::keyexpr::KeyExpr;
 
-pub use crate::{
-    comm::ZenohNodeID,
-    config::{
-        NetworkConfig, ConfigBuilder,
-        zenoh::{ZenohConfigBuilder},
-    },
-};
+pub use crate::comm::ZenohNodeId;
 use crate::{
     comm::{
         CommunicationLayer, MessagePublisher, MessageSubscriber, MessageSubscriberOptions,
         TopicKeyExpr,
-        zenoh::{Publisher, Session, Subscriber},
-    },
-    messages::store::AtomicMessagesStore,
+    }, config::NetworkConfig, messages::store::AtomicMessagesStore, zenoh::comm::{Publisher, Session, Subscriber}
 };
 
 pub struct NetworkContext<Ser: Sync + Send> {
-    messages: AtomicMessagesStore<ZenohNodeID, ValueTree>,
+    messages: AtomicMessagesStore<ZenohNodeId, ValueTree>,
     serializer: Ser,
 }
 
@@ -77,7 +76,7 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
     }
 
     fn on_outbound_message(
-        outbound_message: OutboundMessage<ZenohNodeID>,
+        outbound_message: OutboundMessage<ZenohNodeId>,
         context: &NetworkContext<Ser>,
     ) {
         log::info!("Sender: {}", outbound_message.sender);
@@ -91,8 +90,8 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
     }
 }
 
-impl<Ser: Serializer + Sync + Send> Network<ZenohNodeID> for ZenohNetwork<Ser> {
-    fn get_local_id(&self) -> ZenohNodeID {
+impl<Ser: Serializer + Sync + Send> Network<ZenohNodeId> for ZenohNetwork<Ser> {
+    fn get_local_id(&self) -> ZenohNodeId {
         self.session.node_id()
     }
 
@@ -104,7 +103,7 @@ impl<Ser: Serializer + Sync + Send> Network<ZenohNodeID> for ZenohNetwork<Ser> {
         }
     }
 
-    fn prepare_inbound(&mut self) -> InboundMessage<ZenohNodeID> {
+    fn prepare_inbound(&mut self) -> InboundMessage<ZenohNodeId> {
         log::info!("Preparing inbound message");
         let messages = &self.context.messages;
         log::debug!("Preparing snapshot of messages");

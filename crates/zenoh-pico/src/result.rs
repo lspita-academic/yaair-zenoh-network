@@ -8,6 +8,12 @@ pub enum ZenohError {
     Generic(i8),
 }
 
+impl Default for ZenohError {
+    fn default() -> Self {
+        Self::Generic(-1)
+    }
+}
+
 pub type ZenohResult<T> = Result<T, ZenohError>;
 
 pub trait IntoZenohResult<T> {

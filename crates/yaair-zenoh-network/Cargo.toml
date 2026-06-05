@@ -12,6 +12,7 @@ bindings_module = "zenoh_pico"
 [dependencies]
 hex.workspace = true
 log.workspace = true
+net-literals.workspace = true
 serde.workspace = true
 strum.workspace = true
 thiserror.workspace = true
