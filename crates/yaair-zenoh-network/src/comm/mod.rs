@@ -6,7 +6,7 @@ pub mod zenoh;
 #[path = "zenoh_pico.rs"]
 pub mod zenoh;
 
-use std::{fmt::Display, hash::Hash, sync::Arc, time::Duration};
+use std::{fmt::Display, hash::Hash, sync::Arc};
 
 use serde::{Deserialize, Serialize};
 use yaair::yaair::messages::serializer::Serializer;
@@ -40,27 +40,12 @@ impl Display for ZenohNodeID {
     }
 }
 
-pub struct ZenohConfig {
-    pub scouting_timeout: Duration,
-    pub interface: Option<String>,
-    pub id: Option<ZenohNodeID>,
-}
-
-impl Default for ZenohConfig {
-    fn default() -> Self {
-        Self {
-            scouting_timeout: Duration::from_secs(30),
-            interface: Default::default(),
-            id: Default::default(),
-        }
-    }
-}
-
 pub trait CommunicationLayer: Sized {
     type Err;
+    type Config;
     type KeyExpr: TopicKeyExpr<Self>;
 
-    fn init(zenoh_config: ZenohConfig) -> Result<Self, Self::Err>;
+    fn init(zenoh_config: Self::Config) -> Result<Self, Self::Err>;
     fn node_id(&self) -> ZenohNodeID;
 }
 

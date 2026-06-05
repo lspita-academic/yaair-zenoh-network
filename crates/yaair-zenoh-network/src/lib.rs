@@ -1,9 +1,9 @@
 mod comm;
+mod config;
 mod messages;
 
-use std::{sync::Arc, time::Duration};
+use std::sync::Arc;
 
-use maybe_owned::MaybeOwned;
 use yaair::yaair::{
     messages::{
         inbound::InboundMessage, outbound::OutboundMessage, serializer::Serializer,
@@ -11,13 +11,20 @@ use yaair::yaair::{
     },
     network::Network,
 };
+use zenoh_pico::keyexpr::KeyExpr;
 
-pub use crate::comm::ZenohNodeID;
+pub use crate::{
+    comm::ZenohNodeID,
+    config::{
+        NetworkConfig, ConfigBuilder,
+        zenoh::{ZenohConfigBuilder},
+    },
+};
 use crate::{
     comm::{
         CommunicationLayer, MessagePublisher, MessageSubscriber, MessageSubscriberOptions,
         TopicKeyExpr,
-        zenoh::{KeyExpr, Publisher, Session, Subscriber},
+        zenoh::{Publisher, Session, Subscriber},
     },
     messages::store::AtomicMessagesStore,
 };
@@ -27,54 +34,31 @@ pub struct NetworkContext<Ser: Sync + Send> {
     serializer: Ser,
 }
 
-pub type ZenohConfig = comm::ZenohConfig;
-
-pub struct NetworkConfig {
-    pub base_keyexpr: KeyExpr,
-    pub lifespan: Duration,
-}
-
-impl Default for NetworkConfig {
-    fn default() -> Self {
-        Self {
-            base_keyexpr: KeyExpr::declare_topic("yaair/network/zenoh")
-                .expect("Failed to generate default base keyexpr for network"),
-            lifespan: Duration::from_secs(10),
-        }
-    }
-}
-
-pub struct ZenohNetwork<'a, Ser: Sync + Send> {
-    session: MaybeOwned<'a, Session>,
+pub struct ZenohNetwork<Ser: Sync + Send> {
+    session: Session,
     context: Arc<NetworkContext<Ser>>,
     messages_publisher: Publisher,
     _messages_subscriber: Subscriber, // store it to keep it alive
 }
 
-impl<'a, Ser: Serializer + Sync + Send + 'static> ZenohNetwork<'a, Ser> {
+impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
     pub fn new(
         serializer: Ser,
-        network_config: NetworkConfig,
-        zenoh_config: ZenohConfig,
+        config: NetworkConfig,
     ) -> Result<Self, <Session as CommunicationLayer>::Err> {
-        let session = Session::init(zenoh_config)?;
-        Self::from_zenoh_session(MaybeOwned::Owned(session), serializer, network_config)
-    }
-
-    pub fn from_zenoh_session(
-        session: MaybeOwned<'a, Session>,
-        serializer: Ser,
-        network_config: NetworkConfig,
-    ) -> Result<Self, <Session as CommunicationLayer>::Err> {
+        let session = Session::init(config.zenoh)?;
         let context = Arc::new(NetworkContext {
-            messages: AtomicMessagesStore::new(network_config.lifespan),
+            messages: AtomicMessagesStore::new(config.lifespan),
             serializer,
         });
 
         let node_id = session.node_id();
-        let messages_keyexpr = network_config.base_keyexpr.declare_join("messages")?;
-        let messages_publisher =
-            Publisher::try_declare(&session, messages_keyexpr.declare_join(&node_id.to_string())?)?;
+        let base_keyexpr = KeyExpr::declare_topic(&config.base_keyexpr)?;
+        let messages_keyexpr = base_keyexpr.declare_join("messages")?;
+        let messages_publisher = Publisher::try_declare(
+            &session,
+            messages_keyexpr.declare_join(&node_id.to_string())?,
+        )?;
         let messages_subscriber = Subscriber::try_declare_background(
             &session,
             messages_keyexpr.declare_join("*")?,
@@ -107,9 +91,7 @@ impl<'a, Ser: Serializer + Sync + Send + 'static> ZenohNetwork<'a, Ser> {
     }
 }
 
-impl<Ser: Serializer + Sync + Send> Network<ZenohNodeID>
-    for ZenohNetwork<'_, Ser>
-{
+impl<Ser: Serializer + Sync + Send> Network<ZenohNodeID> for ZenohNetwork<Ser> {
     fn get_local_id(&self) -> ZenohNodeID {
         self.session.node_id()
     }

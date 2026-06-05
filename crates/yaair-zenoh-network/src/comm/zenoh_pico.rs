@@ -3,7 +3,7 @@ use std::sync::Arc;
 use serde::Deserialize;
 use yaair::yaair::messages::serializer::Serializer;
 use zenoh_pico::{
-    config::{ConfigBuilder, ConfigMode},
+    config::{Config, ConfigBuilder, ConfigMode},
     result::ZenohError,
     sample::{Sample, SampleClosure},
     zbytes::TryIntoZBytes,
@@ -22,7 +22,7 @@ use crate::{
     ZenohNodeID,
     comm::{
         CommunicationLayer, MessagePublisher, MessageSubscriber, MessageSubscriberOptions,
-        TopicKeyExpr, ZenohConfig,
+        TopicKeyExpr,
     },
 };
 
@@ -34,9 +34,10 @@ impl From<ZId> for ZenohNodeID {
 
 impl CommunicationLayer for Session {
     type Err = ZenohError;
+    type Config = Config;
     type KeyExpr = KeyExpr;
 
-    fn init(zenoh_config: ZenohConfig) -> Result<Self, Self::Err> {
+    fn init(zenoh_config: Self::Config) -> Result<Self, Self::Err> {
         let mut config_builder = ConfigBuilder::default()
             .mode(ConfigMode::Peer)
             .scouting_timeout(zenoh_config.scouting_timeout);
