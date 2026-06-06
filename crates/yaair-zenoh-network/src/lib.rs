@@ -43,6 +43,7 @@ pub struct ZenohNetwork<Ser: Sync + Send> {
     session: Session,
     context: Arc<NetworkContext<Ser>>,
     messages_publisher: Publisher,
+    heartbit_keyexpr: KeyExpr,
     // store subscribers to keep them alive
     _messages_subscriber: Subscriber,
     _heartbit_subscriber: Subscriber,
@@ -59,12 +60,14 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
         let base_keyexpr = KeyExpr::declare_topic(&config.base_keyexpr)?;
         let (messages_publisher, _messages_subscriber) =
             Self::init_messages(&session, context.clone(), &base_keyexpr)?;
-        let _heartbit_subscriber = Self::init_heartbit(&session, context.clone(), &base_keyexpr)?;
+        let (heartbit_keyexpr, _heartbit_subscriber) =
+            Self::init_heartbit(&session, context.clone(), &base_keyexpr)?;
 
         Ok(Self {
             session,
             context,
             messages_publisher,
+            heartbit_keyexpr,
             _messages_subscriber,
             _heartbit_subscriber,
         })
@@ -96,16 +99,17 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
         session: &Session,
         context: Arc<NetworkContext<Ser>>,
         base_keyexpr: &KeyExpr,
-    ) -> Result<Subscriber, ZenohError> {
+    ) -> Result<(KeyExpr, Subscriber), ZenohError> {
         let heartbit_keyexpr = base_keyexpr.declare_join("heartbit")?;
-        Subscriber::try_declare_background(
+        let subscriber = Subscriber::try_declare_background(
             &session,
             heartbit_keyexpr.star()?,
             MessageSubscriberOptions {
                 context,
                 callback: Self::on_heartbit,
             },
-        )
+        )?;
+        Ok((heartbit_keyexpr, subscriber))
     }
 
     fn on_outbound_message(
@@ -122,7 +126,7 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
         }
     }
 
-    fn on_heartbit(heartbit: Heartbit<ZenohNodeId>, context: &NetworkContext<Ser>) {
+    fn on_heartbit(heartbit: Heartbit, context: &NetworkContext<Ser>) {
         log::info!("Heartbit message from: {}", heartbit.sender);
         let store_result = if let Some(lifespan) = heartbit.lifespan {
             log::info!("Storing updated lifespan [ms]: {}", lifespan.as_millis());
@@ -135,9 +139,13 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
             Err(e) => log::warn!("Failed to store heartbit: {e}"),
         }
     }
+}
 
-    pub fn heartbit_publisher(&self) -> HeartbitPublisher {
-        todo!()
+impl<Ser: Serializer + Sync + Send + Clone> ZenohNetwork<Ser> {
+    pub fn declare_heartbit_publisher(&self) -> Result<HeartbitPublisher<Ser>, ZenohError> {
+        let node_id = self.get_local_id();
+        let keyexpr = self.heartbit_keyexpr.declare_join(&node_id.to_string())?;
+        HeartbitPublisher::try_declare(&self.session, keyexpr, self.context.serializer.clone())
     }
 }
 
@@ -147,7 +155,7 @@ impl<Ser: Serializer + Sync + Send> Network<ZenohNodeId> for ZenohNetwork<Ser> {
     }
 
     fn prepare_outbound(&mut self, outbound_message: Vec<u8>) {
-        log::debug!("Payload size: {}", outbound_message.len());
+        log::debug!("Preparing outbound message");
         match self.messages_publisher.put_message(outbound_message) {
             Ok(_) => log::info!("Message published successfully"),
             Err(e) => log::warn!("Error publishing message: {e}"),
