@@ -8,7 +8,7 @@ use zenoh::config::WhatAmI;
 use crate::{
     ZenohNodeId,
     config::{ConfigBuilder, Locator, PeerType},
-    zenoh::ZenohError,
+    zenoh_impl::ZenohError,
 };
 
 impl From<PeerType> for WhatAmI {

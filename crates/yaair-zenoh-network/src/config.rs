@@ -4,7 +4,7 @@ use net_literals::addrv4;
 use strum::Display;
 
 use crate::ZenohNodeId;
-pub use crate::zenoh::config::{ZenohConfig, ZenohConfigBuilder, ZenohConfigBuilderOptions};
+pub use crate::zenoh_impl::config::{ZenohConfig, ZenohConfigBuilder, ZenohConfigBuilderOptions};
 
 pub type ConfigString = Cow<'static, str>;
 

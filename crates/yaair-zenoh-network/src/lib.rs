@@ -3,11 +3,11 @@ pub mod config;
 mod messages;
 #[cfg(zenoh_impl = "zenoh_full")]
 #[path = "zenoh_full/mod.rs"]
-mod zenoh;
+mod zenoh_impl;
 
 #[cfg(zenoh_impl = "zenoh_pico")]
 #[path = "zenoh_pico/mod.rs"]
-mod zenoh;
+mod zenoh_impl;
 
 use std::sync::Arc;
 
@@ -19,7 +19,7 @@ use yaair::yaair::{
     network::Network,
 };
 
-pub use crate::{comm::ZenohNodeId, zenoh::ZenohError};
+pub use crate::{comm::ZenohNodeId, zenoh_impl::ZenohError};
 use crate::{
     comm::{
         CommunicationLayer, MessagePublisher, MessageSubscriber, MessageSubscriberOptions,
@@ -27,7 +27,7 @@ use crate::{
     },
     config::NetworkConfig,
     messages::store::AtomicMessagesStore,
-    zenoh::comm::{KeyExpr, Publisher, Session, Subscriber},
+    zenoh_impl::comm::{KeyExpr, Publisher, Session, Subscriber},
 };
 
 pub struct NetworkContext<Ser: Sync + Send> {
