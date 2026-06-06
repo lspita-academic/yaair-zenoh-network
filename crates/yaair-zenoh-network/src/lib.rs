@@ -109,7 +109,7 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
         outbound_message: OutboundMessage<ZenohNodeId>,
         context: &NetworkContext<Ser>,
     ) {
-        log::info!("Sender: {}", outbound_message.sender);
+        log::info!("Outbound message from: {}", outbound_message.sender);
         match context
             .messages
             .store_message(outbound_message.sender, outbound_message.into_inner())
@@ -119,8 +119,18 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
         }
     }
 
-    fn on_heartbit(heartbit: Heartbit, context: &NetworkContext<Ser>) {
-        todo!()
+    fn on_heartbit(heartbit: Heartbit<ZenohNodeId>, context: &NetworkContext<Ser>) {
+        log::info!("Heartbit message from: {}", heartbit.sender);
+        let store_result = if let Some(lifespan) = heartbit.lifespan {
+            log::info!("Storing updated lifespan [ms]: {}", lifespan.as_millis());
+            context.messages.store_lifespan(heartbit.sender, lifespan)
+        } else {
+            context.messages.keep_alive(heartbit.sender)
+        };
+        match store_result {
+            Ok(_) => log::info!("Heartbit stored successfully"),
+            Err(e) => log::warn!("Failed to store heartbit: {e}"),
+        }
     }
 }
 
@@ -141,7 +151,10 @@ impl<Ser: Serializer + Sync + Send> Network<ZenohNodeId> for ZenohNetwork<Ser> {
         log::info!("Preparing inbound message");
         let messages = &self.context.messages;
         log::debug!("Preparing snapshot of messages");
-        let snapshot = match messages.clear_dead().and_then(|_| messages.messages_snapshot()) {
+        let snapshot = match messages
+            .clear_dead()
+            .and_then(|_| messages.messages_snapshot())
+        {
             Ok(s) => {
                 log::debug!("Snapshot created successfully");
                 s
