@@ -48,6 +48,8 @@
               # rust
               rust-toolchain
               rust-analyzer
+              cargo-hack
+              cargo-watch
               # toml
               tombi
               # esp32
