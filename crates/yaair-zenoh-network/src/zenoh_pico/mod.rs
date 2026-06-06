@@ -1,6 +1,7 @@
 pub mod comm;
 pub mod config;
 
+pub use zenoh_pico::result::ZenohError;
 use zenoh_pico::zid::ZId;
 
 use crate::{

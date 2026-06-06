@@ -1,4 +1,4 @@
-use std::{fmt::Display, time::Duration};
+use std::time::Duration;
 
 pub use zenoh_pico::config::Config as ZenohConfig;
 use zenoh_pico::{
@@ -23,16 +23,6 @@ impl TryFrom<PeerType> for ConfigMode {
             PeerType::Client => Ok(Self::Client),
             PeerType::Router => Err(Default::default()),
         }
-    }
-}
-
-impl Display for Locator {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}/{}", self.protocol, self.address)?;
-        if let Some(ref interface) = self.interface {
-            write!(f, "#iface={interface}")?;
-        }
-        Ok(())
     }
 }
 

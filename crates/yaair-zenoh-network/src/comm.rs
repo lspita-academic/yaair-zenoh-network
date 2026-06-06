@@ -25,6 +25,11 @@ pub(crate) trait FromZenohNodeId {
     fn from_node_id(node_id: ZenohNodeId) -> Self;
 }
 
+#[allow(dead_code, reason = "Not used only in zenoh full implementation")]
+pub(crate) trait IntoZenohNodeId {
+    fn into_node_id(self) -> ZenohNodeId;
+}
+
 impl From<ZenohNodeIDBytes> for ZenohNodeId {
     fn from(value: ZenohNodeIDBytes) -> Self {
         Self(value)
