@@ -1,6 +1,7 @@
 #![cfg(target_os = "espidf")]
 
 use std::{thread, time::Duration};
+
 use zenoh_pico::{session::Session, zbytes::TryIntoZBytes};
 
 #[cfg(target_os = "espidf")]
