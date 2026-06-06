@@ -20,9 +20,10 @@ pub use zenoh_pico::{
 use crate::{
     ZenohNodeId,
     comm::{
-        CommunicationLayer, IntoZenohNodeId, MessagePublisher, MessageSubscriber,
-        MessageSubscriberOptions, TopicKeyExpr,
+        CommunicationLayer, MessagePublisher, MessageSubscriber, MessageSubscriberOptions,
+        TopicKeyExpr,
     },
+    id::IntoZenohNodeId,
 };
 
 impl CommunicationLayer for Session {

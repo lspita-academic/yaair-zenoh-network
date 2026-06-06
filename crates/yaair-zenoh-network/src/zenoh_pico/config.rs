@@ -10,7 +10,7 @@ use zenoh_pico::{
 
 use crate::{
     ZenohNodeId,
-    comm::FromZenohNodeId,
+    id::FromZenohNodeId,
     config::{ConfigBuilder, ConfigString, Locator, PeerType},
 };
 
