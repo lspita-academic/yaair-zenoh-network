@@ -21,7 +21,7 @@ impl From<PeerType> for WhatAmI {
     }
 }
 
-// https://github.com/eclipse-zenoh/zenoh-pico/tree/1.9.0#34-basic-pubsub-example---p2p-over-udp-multicast
+// <https://github.com/eclipse-zenoh/zenoh-pico/tree/1.9.0#34-basic-pubsub-example---p2p-over-udp-multicast>
 const ZENOH_PICO_BATCH_MULTICAST_SIZE: usize = 2048;
 
 pub struct ZenohConfigBuilderOptions {
