@@ -1,3 +1,21 @@
+//! A zenoh based network for [YAAIR](yaair).
+//!
+//! It supports both standard and embedded targets by using
+//! [Zenoh](https://github.com/eclipse-zenoh/zenoh) and
+//! [Zenoh pico](https://github.com/eclipse-zenoh/zenoh-pico).
+//!
+//! **FOR EMBEDDED, ONLY ESP-IDF BASED TARGETS ARE SUPPORTED**
+//!
+//! # Examples
+//!
+//! You can find a full aggregate computing example using yaair
+//! [here](https://github.com/lspita-academic/yaair-zenoh-network/tree/main/examples/gradient)
+//!
+//! # Features
+//!
+//! - `heartbit`: enables the ability to use keepalive messages to be able to
+//!   notify other peers of the node existance.
+
 pub(crate) mod comm;
 pub mod config;
 #[cfg(feature = "heartbit")]
