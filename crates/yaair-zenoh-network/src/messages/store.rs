@@ -35,18 +35,23 @@ impl<T> StoreEntity<T> {
         self.message.as_ref()
     }
 
-    pub fn update_message(&mut self, message: T) {
-        self.message = Some(message);
+    pub fn update_message(&mut self, message: T) -> Option<T> {
         self.keep_alive();
+        Self::update(&mut self.message, Some(message))
     }
 
-    pub fn update_lifespan(&mut self, lifespan: Duration) {
-        self.lifespan = lifespan;
+    pub fn update_lifespan(&mut self, lifespan: Duration) -> Duration {
         self.keep_alive();
+        Self::update(&mut self.lifespan, lifespan)
     }
 
-    pub fn keep_alive(&mut self) {
-        self.timestamp = SystemTime::now();
+    pub fn keep_alive(&mut self) -> SystemTime {
+        Self::update(&mut self.timestamp, SystemTime::now())
+    }
+
+    fn update<Value>(dest: &mut Value, src: Value) -> Value {
+        let prev = std::mem::replace(dest, src);
+        prev
     }
 }
 
@@ -70,38 +75,45 @@ impl<Id: Eq + Hash + Clone, T> AtomicMessagesStore<Id, T> {
         }
     }
 
-    pub fn acquire_storage(&self) -> Result<MutexGuard<'_, Storage<Id, T>>, PoisonedLockError> {
+    fn acquire_storage(&self) -> Result<MutexGuard<'_, Storage<Id, T>>, PoisonedLockError> {
         self.storage.lock().map_err(|_| PoisonedLockError)
     }
 
-    pub fn store_message(&self, id: Id, message: T) -> Result<(), PoisonedLockError> {
+    pub fn store_message(&self, id: Id, message: T) -> Result<Option<T>, PoisonedLockError> {
         let mut storage = self.acquire_storage()?;
-        if let Some(entity) = storage.get_mut(&id) {
-            entity.update_message(message);
+        // if-else instead of and_then/or_else to prevent cloning `message`
+        Ok(if let Some(e) = storage.get_mut(&id) {
+            e.update_message(message)
         } else {
             storage.insert(id, StoreEntity::new(Some(message), self.default_lifespan));
-        }
-        Ok(())
+            None
+        })
     }
 
-    pub fn store_lifespan(&self, id: Id, lifespan: Duration) -> Result<(), PoisonedLockError> {
+    pub fn store_lifespan(
+        &self,
+        id: Id,
+        lifespan: Duration,
+    ) -> Result<Option<Duration>, PoisonedLockError> {
         let mut storage = self.acquire_storage()?;
-        if let Some(entity) = storage.get_mut(&id) {
-            entity.update_lifespan(lifespan);
-        } else {
-            storage.insert(id, StoreEntity::new(None, lifespan));
-        }
-        Ok(())
+        Ok(storage
+            .get_mut(&id)
+            .and_then(|e| Some(e.update_lifespan(lifespan)))
+            .or_else(|| {
+                storage.insert(id, StoreEntity::new(None, lifespan));
+                None
+            }))
     }
 
-    pub fn keep_alive(&self, id: Id) -> Result<(), PoisonedLockError> {
+    pub fn keep_alive(&self, id: Id) -> Result<Option<SystemTime>, PoisonedLockError> {
         let mut storage = self.acquire_storage()?;
-        if let Some(entity) = storage.get_mut(&id) {
-            entity.keep_alive();
-        } else {
-            storage.insert(id, StoreEntity::new(None, self.default_lifespan));
-        }
-        Ok(())
+        Ok(storage
+            .get_mut(&id)
+            .and_then(|e| Some(e.keep_alive()))
+            .or_else(|| {
+                storage.insert(id, StoreEntity::new(None, self.default_lifespan));
+                None
+            }))
     }
 
     pub fn clear_dead(&self) -> Result<Vec<Id>, PoisonedLockError> {

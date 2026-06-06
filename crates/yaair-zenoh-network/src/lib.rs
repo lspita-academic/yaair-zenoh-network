@@ -110,14 +110,24 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
         Ok((heartbit_keyexpr, subscriber))
     }
 
+    fn log_store_result<T>(id: ZenohNodeId) -> impl FnOnce(Option<T>) {
+        return move |result| {
+            if result.is_none() {
+                log::warn!("New entity registered: {id}")
+            }
+        };
+    }
+
     fn on_outbound_message(
         outbound_message: OutboundMessage<ZenohNodeId>,
         context: &NetworkContext<Ser>,
     ) {
-        log::info!("Outbound message from: {}", outbound_message.sender);
+        let sender = outbound_message.sender;
+        log::info!("Outbound message from: {}", sender);
         match context
             .messages
-            .store_message(outbound_message.sender, outbound_message.into_inner())
+            .store_message(sender, outbound_message.into_inner())
+            .map(Self::log_store_result(sender))
         {
             Ok(_) => log::info!("Message stored successfully"),
             Err(e) => log::warn!("Failed to store message: {e}"),
@@ -125,12 +135,20 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
     }
 
     fn on_heartbit(heartbit: Heartbit, context: &NetworkContext<Ser>) {
-        log::info!("Heartbit message from: {}", heartbit.sender);
+        let sender = heartbit.sender;
+        log::info!("Heartbit message from: {}", sender);
+
         let store_result = if let Some(lifespan) = heartbit.lifespan {
             log::info!("Storing updated lifespan [ms]: {}", lifespan.as_millis());
-            context.messages.store_lifespan(heartbit.sender, lifespan)
+            context
+                .messages
+                .store_lifespan(sender, lifespan)
+                .map(Self::log_store_result(sender))
         } else {
-            context.messages.keep_alive(heartbit.sender)
+            context
+                .messages
+                .keep_alive(sender)
+                .map(Self::log_store_result(sender))
         };
         match store_result {
             Ok(_) => log::info!("Heartbit stored successfully"),
