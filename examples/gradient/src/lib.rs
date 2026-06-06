@@ -19,7 +19,7 @@ use yaair_serde::yaair_serde::json::JsonSerializer;
 use yaair_zenoh_network::config::ConfigBuilderDefault;
 use yaair_zenoh_network::{
     ZenohNetwork, ZenohNodeId,
-    config::{ConfigBuilder, ZenohConfigBuilder},
+    config::{ConfigBuilder, ZenohConfigBuilder, ZenohNetworkConfig},
 };
 
 pub type Serializer = JsonSerializer;
@@ -130,7 +130,10 @@ pub async fn gradient_main(node: Node, spawner: Spawner) {
         .id(node_id)
         .build()
         .expect("Failed to create zenoh config");
-    let network_config = zenoh_config.into();
+    let network_config = ZenohNetworkConfig {
+        lifespan: Duration::from_secs(15),
+        ..zenoh_config.into()
+    };
     let network =
         ZenohNetwork::new(JsonSerializer, network_config).expect("Failed to create zenoh network");
     log::info!("Network id: {}", network.get_local_id());
