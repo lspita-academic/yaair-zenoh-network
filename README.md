@@ -22,3 +22,16 @@ crate denoted by the `ESP_IDF_SYS_ROOT_CRATE` env variable (see: <https://github
 # Usage
 
 See the [gradient example](./examples/gradient/)
+
+## Peers don't seem to see each other
+
+The firewall could be blocking the messages. On Linux, you can try
+
+```sh
+# -I: insert at the top of the chain (so that it's the first rule match)
+# -D: remove from chain, to restore later
+sudo iptables -I INPUT -p udp --dport 7446 -j ACCEPT
+sudo iptables -I INPUT -p udp --dport 7447 -j ACCEPT
+sudo iptables -I INPUT -p tcp --dport 7446 -j ACCEPT
+sudo iptables -I INPUT -p tcp --dport 7447 -j ACCEPT
+```
