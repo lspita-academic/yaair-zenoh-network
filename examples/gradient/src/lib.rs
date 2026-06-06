@@ -1,8 +1,7 @@
 #[cfg(feature = "heartbit")]
 mod heartbit;
 
-use std::time::Duration;
-use std::{array, cmp::Ordering, collections::HashMap};
+use std::{array, cmp::Ordering, collections::HashMap, time::Duration};
 
 use embassy_executor::Spawner;
 use embassy_time::Timer;
