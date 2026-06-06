@@ -111,11 +111,10 @@ impl ConfigBuilder {
         // zenoh pico uuid: XXXXXXXX-XXXX-XXXX-XX-XXXXXXXXXXXXXX (8-4-4-2-14)
         //
         // Permalink to the implementation:
-        // https://github.com/eclipse-zenoh/zenoh-pico/blob/07c84ebcf926114bffbf70edd82f3d71919c3868/src/utils/uuid.c#L26
+        // <https://github.com/eclipse-zenoh/zenoh-pico/blob/07c84ebcf926114bffbf70edd82f3d71919c3868/src/utils/uuid.c#L26>
         //
         // Opened issue:
-        // https://github.com/eclipse-zenoh/zenoh-pico/issues/1229
-
+        // <https://github.com/eclipse-zenoh/zenoh-pico/issues/1229>
         let uuid_string = [
             &bytes_string[..8],    // 8
             &bytes_string[8..12],  // 4

@@ -40,7 +40,7 @@ pub struct ZenohConfigBuilderOptions {
     /// interface is required for multicast, and it's rare that multicast will be
     /// disabled, so it's not an [Option](Option) type.
     ///
-    /// https://github.com/eclipse-zenoh/zenoh-pico#34-basic-pubsub-example---p2p-over-udp-multicast
+    /// <https://github.com/eclipse-zenoh/zenoh-pico#34-basic-pubsub-example---p2p-over-udp-multicast>
     pub interface: ConfigString,
 }
 
