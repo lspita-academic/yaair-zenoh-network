@@ -1,6 +1,8 @@
 #[cfg(feature = "heartbit")]
 mod heartbit;
 
+#[cfg(feature = "heartbit")]
+use std::time::Duration;
 use std::{array, cmp::Ordering, collections::HashMap};
 
 use embassy_executor::Spawner;
@@ -43,6 +45,14 @@ impl Node {
 
     fn is_source(&self) -> bool {
         *self == Self::Node1
+    }
+
+    #[cfg(feature = "heartbit")]
+    fn heartbit_lifespan(&self) -> Option<Duration> {
+        match self {
+            Self::Node3 => Some(Duration::from_secs(3)),
+            _ => None,
+        }
     }
 }
 
@@ -92,7 +102,7 @@ async fn gradient_task(node: Node, network: ZenohNetwork<Serializer>) {
             Ok(result) => log::info!("Gradient result: {result:?}"),
             Err(e) => log::warn!("Error during cycle: {e:?}"),
         }
-        Timer::after(EmbassyDuration::from_secs(1)).await;
+        Timer::after(EmbassyDuration::from_secs(3)).await;
     }
 }
 
@@ -134,8 +144,8 @@ pub async fn gradient_main(node: Node, spawner: Spawner) {
         spawner.spawn(
             heartbit::periodic_heartbit_task(
                 heartbit_publisher,
-                EmbassyDuration::from_secs(5),
-                None,
+                EmbassyDuration::from_secs(10),
+                node.heartbit_lifespan(),
             )
             .expect("Failed to create heartbit task"),
         );
