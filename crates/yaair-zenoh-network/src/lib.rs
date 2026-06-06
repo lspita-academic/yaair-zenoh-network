@@ -60,6 +60,15 @@ pub(crate) struct NetworkContext<Ser: Sync + Send> {
     node_id: ZenohNodeId,
 }
 
+/// A zenoh based implementation of the yaair `Network` trait.
+///
+/// The network operates under a [base
+/// keyexpr](ZenohNetworkConfig::base_keyexpr) namespace to prevent conflicts
+/// with other topics.
+///
+/// If the [`heartbit`](crate#features) feature is enabled, it also listens for
+/// [`Heartbit`] messages and provides the ability to declare an
+/// [`HeartbitPublisher`] to notify the other peers.
 pub struct ZenohNetwork<Ser: Sync + Send> {
     session: Session,
     context: Arc<NetworkContext<Ser>>,
@@ -196,7 +205,7 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
     }
 
     #[cfg(feature = "heartbit")]
-    pub fn declare_heartbit_publisher<'a>(&'a self) -> Result<HeartbitPublisher<Ser>, ZenohError> {
+    pub fn declare_heartbit_publisher(&self) -> Result<HeartbitPublisher<Ser>, ZenohError> {
         let node_id = self.get_local_id();
         let keyexpr = self.heartbit_keyexpr.declare_join(&node_id.to_string())?;
         HeartbitPublisher::try_declare(&self.session, keyexpr, self.context.clone())
