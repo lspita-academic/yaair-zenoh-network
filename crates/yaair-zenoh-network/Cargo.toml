@@ -3,6 +3,10 @@ name = "yaair-zenoh-network"
 version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
+description.workspace = true
+repository.workspace = true
+keywords.workspace = true
+categories.workspace = true
 
 [[package.metadata.esp-idf-sys.extra_components]]
 component_dirs = ["../../lib/zenoh-pico"]

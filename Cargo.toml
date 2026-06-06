@@ -7,6 +7,10 @@ default-members = ["crates/yaair-zenoh-network"]
 version = "0.1.0"
 edition = "2024"
 rust-version = "1.93"
+description = "A zenoh based network for YAAIR"
+repository = "https://github.com/lspita-academic/yaair-zenoh-network"
+keywords = ["network", "yaair", "zenoh"]
+categories = ["network-programming", "embedded"]
 
 [workspace.dependencies]
 critical-section = { version = "1.2", default-features = false, features = [
