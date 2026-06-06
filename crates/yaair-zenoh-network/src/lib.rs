@@ -35,6 +35,7 @@ use crate::{
 pub struct NetworkContext<Ser: Sync + Send> {
     messages: AtomicMessagesStore<ZenohNodeId, ValueTree>,
     serializer: Ser,
+    node_id: ZenohNodeId,
 }
 
 pub struct ZenohNetwork<Ser: Sync + Send> {
@@ -53,6 +54,7 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
         let context = Arc::new(NetworkContext {
             messages: AtomicMessagesStore::new(config.lifespan),
             serializer,
+            node_id: session.node_id(),
         });
 
         let base_keyexpr = KeyExpr::declare_topic(&config.base_keyexpr)?;
@@ -123,6 +125,10 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
         context: &NetworkContext<Ser>,
     ) {
         let sender = outbound_message.sender;
+        if sender == context.node_id {
+            return;
+        }
+
         log::info!("Outbound message from: {}", sender);
         match context
             .messages
@@ -136,6 +142,10 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
 
     fn on_heartbit(heartbit: Heartbit, context: &NetworkContext<Ser>) {
         let sender = heartbit.sender;
+        if sender == context.node_id {
+            return;
+        }
+
         log::info!("Heartbit message from: {}", sender);
 
         let store_result = if let Some(lifespan) = heartbit.lifespan {
