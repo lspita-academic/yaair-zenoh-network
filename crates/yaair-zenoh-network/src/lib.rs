@@ -60,7 +60,7 @@ pub(crate) struct NetworkContext<Ser: Sync + Send> {
     node_id: ZenohNodeId,
 }
 
-/// A zenoh based implementation of the yaair `Network` trait.
+/// A zenoh based implementation of the yaair [`Network`] trait.
 ///
 /// The network operates under a [base
 /// keyexpr](ZenohNetworkConfig::base_keyexpr) namespace to prevent conflicts
@@ -82,6 +82,8 @@ pub struct ZenohNetwork<Ser: Sync + Send> {
 }
 
 impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
+    /// Creates a new [`ZenohNetwork`] instance with the given serializer and
+    /// configuration.
     pub fn new(serializer: Ser, config: ZenohNetworkConfig) -> Result<Self, ZenohError> {
         let session = Session::init(config.zenoh)?;
         let context = Arc::new(NetworkContext {
@@ -204,6 +206,8 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
         }
     }
 
+    /// Declares an [`HeartbitPublisher`] to notify the other peers of the node
+    /// existance.
     #[cfg(feature = "heartbit")]
     pub fn declare_heartbit_publisher(&self) -> Result<HeartbitPublisher<Ser>, ZenohError> {
         let node_id = self.get_local_id();
