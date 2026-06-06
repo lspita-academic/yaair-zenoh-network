@@ -1,9 +1,16 @@
 mod comm;
+pub mod config;
 mod messages;
+#[cfg(zenoh_impl = "zenoh_full")]
+#[path = "zenoh_full/mod.rs"]
+mod zenoh_impl;
 
-use std::{sync::Arc, time::Duration};
+#[cfg(zenoh_impl = "zenoh_pico")]
+#[path = "zenoh_pico/mod.rs"]
+mod zenoh_impl;
 
-use maybe_owned::MaybeOwned;
+use std::sync::Arc;
+
 use yaair::yaair::{
     messages::{
         inbound::InboundMessage, outbound::OutboundMessage, serializer::Serializer,
@@ -12,69 +19,47 @@ use yaair::yaair::{
     network::Network,
 };
 
-pub use crate::comm::ZenohNodeID;
+pub use crate::{comm::ZenohNodeId, zenoh_impl::ZenohError};
 use crate::{
     comm::{
         CommunicationLayer, MessagePublisher, MessageSubscriber, MessageSubscriberOptions,
         TopicKeyExpr,
-        zenoh::{KeyExpr, Publisher, Session, Subscriber},
     },
+    config::NetworkConfig,
     messages::store::AtomicMessagesStore,
+    zenoh_impl::comm::{KeyExpr, Publisher, Session, Subscriber},
 };
 
 pub struct NetworkContext<Ser: Sync + Send> {
-    messages: AtomicMessagesStore<ZenohNodeID, ValueTree>,
+    messages: AtomicMessagesStore<ZenohNodeId, ValueTree>,
     serializer: Ser,
 }
 
-pub type ZenohConfig = comm::ZenohConfig;
-
-pub struct NetworkConfig {
-    pub base_keyexpr: KeyExpr,
-    pub lifespan: Duration,
-}
-
-impl Default for NetworkConfig {
-    fn default() -> Self {
-        Self {
-            base_keyexpr: KeyExpr::declare_topic("yaair/network/zenoh")
-                .expect("Failed to generate default base keyexpr for network"),
-            lifespan: Duration::from_secs(10),
-        }
-    }
-}
-
-pub struct ZenohNetwork<'a, Ser: Sync + Send> {
-    session: MaybeOwned<'a, Session>,
+pub struct ZenohNetwork<Ser: Sync + Send> {
+    session: Session,
     context: Arc<NetworkContext<Ser>>,
     messages_publisher: Publisher,
     _messages_subscriber: Subscriber, // store it to keep it alive
 }
 
-impl<'a, Ser: Serializer + Sync + Send + 'static> ZenohNetwork<'a, Ser> {
+impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
     pub fn new(
         serializer: Ser,
-        network_config: NetworkConfig,
-        zenoh_config: ZenohConfig,
+        config: NetworkConfig,
     ) -> Result<Self, <Session as CommunicationLayer>::Err> {
-        let session = Session::init(zenoh_config)?;
-        Self::from_zenoh_session(MaybeOwned::Owned(session), serializer, network_config)
-    }
-
-    pub fn from_zenoh_session(
-        session: MaybeOwned<'a, Session>,
-        serializer: Ser,
-        network_config: NetworkConfig,
-    ) -> Result<Self, <Session as CommunicationLayer>::Err> {
+        let session = Session::init(config.zenoh)?;
         let context = Arc::new(NetworkContext {
-            messages: AtomicMessagesStore::new(network_config.lifespan),
+            messages: AtomicMessagesStore::new(config.lifespan),
             serializer,
         });
 
         let node_id = session.node_id();
-        let messages_keyexpr = network_config.base_keyexpr.declare_join("messages")?;
-        let messages_publisher =
-            Publisher::try_declare(&session, messages_keyexpr.declare_join(&node_id.to_string())?)?;
+        let base_keyexpr = KeyExpr::declare_topic(&config.base_keyexpr)?;
+        let messages_keyexpr = base_keyexpr.declare_join("messages")?;
+        let messages_publisher = Publisher::try_declare(
+            &session,
+            messages_keyexpr.declare_join(&node_id.to_string())?,
+        )?;
         let messages_subscriber = Subscriber::try_declare_background(
             &session,
             messages_keyexpr.declare_join("*")?,
@@ -93,7 +78,7 @@ impl<'a, Ser: Serializer + Sync + Send + 'static> ZenohNetwork<'a, Ser> {
     }
 
     fn on_outbound_message(
-        outbound_message: OutboundMessage<ZenohNodeID>,
+        outbound_message: OutboundMessage<ZenohNodeId>,
         context: &NetworkContext<Ser>,
     ) {
         log::info!("Sender: {}", outbound_message.sender);
@@ -107,10 +92,8 @@ impl<'a, Ser: Serializer + Sync + Send + 'static> ZenohNetwork<'a, Ser> {
     }
 }
 
-impl<Ser: Serializer + Sync + Send> Network<ZenohNodeID>
-    for ZenohNetwork<'_, Ser>
-{
-    fn get_local_id(&self) -> ZenohNodeID {
+impl<Ser: Serializer + Sync + Send> Network<ZenohNodeId> for ZenohNetwork<Ser> {
+    fn get_local_id(&self) -> ZenohNodeId {
         self.session.node_id()
     }
 
@@ -122,7 +105,7 @@ impl<Ser: Serializer + Sync + Send> Network<ZenohNodeID>
         }
     }
 
-    fn prepare_inbound(&mut self) -> InboundMessage<ZenohNodeID> {
+    fn prepare_inbound(&mut self) -> InboundMessage<ZenohNodeId> {
         log::info!("Preparing inbound message");
         let messages = &self.context.messages;
         log::debug!("Preparing snapshot of messages");

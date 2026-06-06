@@ -1,12 +1,4 @@
-#[cfg(zenoh_impl = "zenoh_full")]
-#[path = "zenoh_full.rs"]
-pub mod zenoh;
-
-#[cfg(zenoh_impl = "zenoh_pico")]
-#[path = "zenoh_pico.rs"]
-pub mod zenoh;
-
-use std::{fmt::Display, hash::Hash, sync::Arc, time::Duration};
+use std::{fmt::Display, hash::Hash, sync::Arc};
 
 use serde::{Deserialize, Serialize};
 use yaair::yaair::messages::serializer::Serializer;
@@ -16,9 +8,9 @@ use crate::NetworkContext;
 pub type ZenohNodeIDBytes = [u8; 16];
 
 #[derive(Serialize, Deserialize, Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
-pub struct ZenohNodeID(ZenohNodeIDBytes);
+pub struct ZenohNodeId(ZenohNodeIDBytes);
 
-impl ZenohNodeID {
+impl ZenohNodeId {
     pub fn as_bytes(&self) -> &ZenohNodeIDBytes {
         &self.0
     }
@@ -28,40 +20,35 @@ impl ZenohNodeID {
     }
 }
 
-impl From<ZenohNodeIDBytes> for ZenohNodeID {
+#[allow(dead_code, reason = "Not used only in zenoh full implementation")]
+pub(crate) trait FromZenohNodeId {
+    fn from_node_id(node_id: ZenohNodeId) -> Self;
+}
+
+#[allow(dead_code, reason = "Not used only in zenoh full implementation")]
+pub(crate) trait IntoZenohNodeId {
+    fn into_node_id(self) -> ZenohNodeId;
+}
+
+impl From<ZenohNodeIDBytes> for ZenohNodeId {
     fn from(value: ZenohNodeIDBytes) -> Self {
         Self(value)
     }
 }
 
-impl Display for ZenohNodeID {
+impl Display for ZenohNodeId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         hex::encode(&self.0).fmt(f)
     }
 }
 
-pub struct ZenohConfig {
-    pub scouting_timeout: Duration,
-    pub interface: Option<String>,
-    pub id: Option<ZenohNodeID>,
-}
-
-impl Default for ZenohConfig {
-    fn default() -> Self {
-        Self {
-            scouting_timeout: Duration::from_secs(30),
-            interface: Default::default(),
-            id: Default::default(),
-        }
-    }
-}
-
 pub trait CommunicationLayer: Sized {
     type Err;
+    type Config;
     type KeyExpr: TopicKeyExpr<Self>;
 
-    fn init(zenoh_config: ZenohConfig) -> Result<Self, Self::Err>;
-    fn node_id(&self) -> ZenohNodeID;
+    fn init(zenoh_config: Self::Config) -> Result<Self, Self::Err>;
+    fn node_id(&self) -> ZenohNodeId;
 }
 
 pub trait TopicKeyExpr<Comm: CommunicationLayer>: Sized {

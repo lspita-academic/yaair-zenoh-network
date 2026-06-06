@@ -1,25 +1,26 @@
 use serde::Deserialize;
 use yaair::yaair::messages::serializer::Serializer;
 use zenoh::{
-    Config, Error, Wait,
+    Error, Wait,
     config::ZenohId,
     pubsub::{Publisher as ZenohPublisher, Subscriber as ZenohSubscriber},
     sample::Sample,
 };
 pub use zenoh::{Session, key_expr::OwnedKeyExpr as KeyExpr};
 
-use crate::comm::{
-    CommunicationLayer, MessagePublisher, MessageSubscriber, MessageSubscriberOptions,
-    TopicKeyExpr, ZenohConfig, ZenohNodeID,
+use crate::{
+    ZenohNodeId,
+    comm::{
+        CommunicationLayer, MessagePublisher, MessageSubscriber, MessageSubscriberOptions,
+        TopicKeyExpr,
+    },
+    config::ZenohConfig,
 };
 
 pub type Publisher = ZenohPublisher<'static>;
 pub type Subscriber = ZenohSubscriber<()>;
 
-// https://github.com/eclipse-zenoh/zenoh-pico/tree/1.9.0#34-basic-pubsub-example---p2p-over-udp-multicast
-const ZENOH_PICO_BATCH_MULTICAST_SIZE: usize = 2048;
-
-impl From<ZenohId> for ZenohNodeID {
+impl From<ZenohId> for ZenohNodeId {
     fn from(value: ZenohId) -> Self {
         value.to_le_bytes().into()
     }
@@ -27,37 +28,14 @@ impl From<ZenohId> for ZenohNodeID {
 
 impl CommunicationLayer for Session {
     type Err = Error;
+    type Config = ZenohConfig;
     type KeyExpr = KeyExpr;
 
-    fn init(zenoh_config: ZenohConfig) -> Result<Self, Self::Err> {
-        let mut config = Config::default();
-
-        config.insert_json5("mode", "\"peer\"")?;
-        config.insert_json5(
-            "scouting/timeout",
-            &zenoh_config.scouting_timeout.as_millis().to_string(),
-        )?;
-        config.insert_json5(
-            "transport/link/tx/batch_size",
-            &ZENOH_PICO_BATCH_MULTICAST_SIZE.to_string(),
-        )?;
-
-        config.insert_json5("scouting/multicast/address", "\"224.0.0.224:7446\"")?;
-        let mut listen_endpoint = String::from("udp/224.0.0.224:7447");
-        if let Some(interface) = zenoh_config.interface {
-            listen_endpoint.push_str(&format!("#iface={interface}"));
-            config.insert_json5("scouting/multicast/interface", &format!("\"{interface}\""))?;
-        }
-        config.insert_json5("listen/endpoints", &format!("[\"{listen_endpoint}\"]"))?;
-
-        if let Some(id) = zenoh_config.id {
-            config.insert_json5("id", &format!("\"{id}\""))?;
-        }
-
-        zenoh::open(config).wait()
+    fn init(zenoh_config: Self::Config) -> Result<Self, Self::Err> {
+        zenoh::open(zenoh_config).wait()
     }
 
-    fn node_id(&self) -> ZenohNodeID {
+    fn node_id(&self) -> ZenohNodeId {
         self.zid().into()
     }
 }

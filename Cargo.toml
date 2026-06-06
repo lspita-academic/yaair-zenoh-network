@@ -31,13 +31,14 @@ hex = "0.4"
 itertools = "0.14.0"
 log = "0.4"
 macro-utils = { path = "crates/macro-utils" }
-maybe-owned = "0.3.4"
+net-literals = "0.2"
 num_enum = "0.7"
 postcard = { version = "1.1", features = ["alloc"] }
 proc-macro-crate = "3.5"
 proc-macro2 = "1.0"
 quote = "1.0"
 serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 static_cell = "2.1"
 strum = { version = "0.28", features = ["default", "derive"] }
 syn = "2.0"
