@@ -1,6 +1,10 @@
-use std::{array, cmp::Ordering, collections::HashMap, thread::sleep, time::Duration};
+#[cfg(feature = "heartbit")]
+mod heartbit;
+
+use std::{array, cmp::Ordering, collections::HashMap};
 
 use embassy_executor::Spawner;
+use embassy_time::Timer;
 use examples_common;
 use yaair::yaair::{
     aggregate::{Aggregate, AggregateError, VM},
@@ -9,12 +13,15 @@ use yaair::yaair::{
     network::Network,
 };
 use yaair_serde::yaair_serde::json::JsonSerializer;
-#[cfg(not(target_os = "espidf"))]
+#[allow(unused_imports, reason = "Used by some targets implementation")]
 use yaair_zenoh_network::config::ConfigBuilderDefault;
 use yaair_zenoh_network::{
     ZenohNetwork, ZenohNodeId,
-    config::{ConfigBuilder, ZenohConfig, ZenohConfigBuilder},
+    config::{ConfigBuilder, ZenohConfigBuilder},
 };
+
+pub type Serializer = JsonSerializer;
+pub type EmbassyDuration = embassy_time::Duration;
 
 #[derive(Clone, Copy, PartialEq, Eq)]
 pub enum Node {
@@ -72,10 +79,8 @@ fn gradient(
 
 #[allow(clippy::print_stdout, clippy::print_stderr, clippy::use_debug)]
 #[embassy_executor::task]
-async fn gradient_task(node: Node, zenoh_config: ZenohConfig) {
-    let network = ZenohNetwork::new(JsonSerializer, zenoh_config.into())
-        .expect("Failed to create zenoh network");
-    log::info!("Network id: {}", network.get_local_id());
+async fn gradient_task(node: Node, network: ZenohNetwork<Serializer>) {
+    log::warn!("Gradient task started");
 
     let env = GradientEnv {
         node,
@@ -87,12 +92,13 @@ async fn gradient_task(node: Node, zenoh_config: ZenohConfig) {
             Ok(result) => log::info!("Gradient result: {result:?}"),
             Err(e) => log::warn!("Error during cycle: {e:?}"),
         }
-        sleep(Duration::from_secs(1));
+        Timer::after(EmbassyDuration::from_secs(1)).await;
     }
 }
 
 pub async fn gradient_main(node: Node, spawner: Spawner) {
     examples_common::init();
+    log::warn!("Heartbit feature: {}", cfg!(feature = "heartbit"));
 
     #[cfg(target_os = "espidf")]
     let zenoh_config_builder = {
@@ -114,5 +120,25 @@ pub async fn gradient_main(node: Node, spawner: Spawner) {
         .id(node_id)
         .build()
         .expect("Failed to create zenoh config");
-    spawner.spawn(gradient_task(node, zenoh_config).expect("Failed to create gradient task"));
+    let network_config = zenoh_config.into();
+    let network =
+        ZenohNetwork::new(JsonSerializer, network_config).expect("Failed to create zenoh network");
+    log::info!("Network id: {}", network.get_local_id());
+
+    #[cfg(feature = "heartbit")]
+    {
+        let heartbit_publisher = network
+            .declare_heartbit_publisher()
+            .expect("Failed to declare heartbit publisher");
+
+        spawner.spawn(
+            heartbit::periodic_heartbit_task(
+                heartbit_publisher,
+                EmbassyDuration::from_secs(5),
+                None,
+            )
+            .expect("Failed to create heartbit task"),
+        );
+    }
+    spawner.spawn(gradient_task(node, network).expect("Failed to create gradient task"));
 }

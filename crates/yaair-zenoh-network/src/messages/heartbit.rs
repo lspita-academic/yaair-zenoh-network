@@ -1,10 +1,10 @@
-use std::time::Duration;
+use std::{sync::Arc, time::Duration};
 
 use serde::{Deserialize, Serialize};
 use yaair::yaair::messages::serializer::Serializer;
 
 use crate::{
-    ZenohNodeId,
+    NetworkContext, ZenohNodeId,
     comm::{CommunicationLayer, MessagePublisher},
     zenoh_impl::comm::{KeyExpr, Publisher, Session},
 };
@@ -15,23 +15,23 @@ pub struct Heartbit {
     pub lifespan: Option<Duration>,
 }
 
-pub struct HeartbitPublisher<Ser> {
+pub struct HeartbitPublisher<Ser: Serializer + Sync + Send> {
     node_id: ZenohNodeId,
-    serializer: Ser,
+    network_context: Arc<NetworkContext<Ser>>,
     publisher: Publisher,
 }
 
-impl<Ser: Serializer> HeartbitPublisher<Ser> {
+impl<'a, Ser: Serializer + Sync + Send> HeartbitPublisher<Ser> {
     pub(crate) fn try_declare(
         session: &Session,
         keyexpr: KeyExpr,
-        serializer: Ser,
+        network_context: Arc<NetworkContext<Ser>>,
     ) -> Result<Self, <Session as CommunicationLayer>::Err> {
         let node_id = session.node_id();
         let publisher = Publisher::try_declare(session, keyexpr)?;
         Ok(Self {
             node_id,
-            serializer,
+            network_context,
             publisher,
         })
     }
@@ -53,7 +53,7 @@ impl<Ser: Serializer> HeartbitPublisher<Ser> {
 
     fn put_heartbit(&self, heartbit: Heartbit) {
         log::info!("Preparing heartbit message");
-        let heartbit_bytes = match self.serializer.serialize(&heartbit) {
+        let heartbit_bytes = match self.network_context.serializer.serialize(&heartbit) {
             Ok(v) => v,
             Err(e) => {
                 log::warn!("Failed to serialize heartbit: {e}");

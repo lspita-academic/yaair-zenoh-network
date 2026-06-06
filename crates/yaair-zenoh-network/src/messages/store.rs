@@ -104,7 +104,7 @@ impl<Id: Eq + Hash + Clone, T> AtomicMessagesStore<Id, T> {
         Ok(())
     }
 
-    pub fn clear_dead(&self) -> Result<(), PoisonedLockError> {
+    pub fn clear_dead(&self) -> Result<Vec<Id>, PoisonedLockError> {
         let mut storage = self.acquire_storage()?;
         let expired_keys: Vec<_> = storage
             .iter()
@@ -118,10 +118,10 @@ impl<Id: Eq + Hash + Clone, T> AtomicMessagesStore<Id, T> {
                 })
             })
             .collect();
-        expired_keys.into_iter().for_each(|k| {
-            storage.remove(&k);
+        expired_keys.iter().for_each(|k| {
+            storage.remove(k);
         });
-        Ok(())
+        Ok(expired_keys)
     }
 }
 

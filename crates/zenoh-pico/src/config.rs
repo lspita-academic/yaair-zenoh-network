@@ -44,7 +44,7 @@ impl Into<u8> for ConfigKey {
     }
 }
 
-#[zwrap(base(name = "config"), zvalue, zown)]
+#[zwrap(base(name = "config"), zvalue, zown, zclone)]
 pub struct Config;
 
 #[derive(Default)]

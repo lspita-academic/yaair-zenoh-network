@@ -12,6 +12,7 @@ mod zenoh_impl;
 
 use std::sync::Arc;
 
+use itertools::Itertools;
 use yaair::yaair::{
     messages::{
         inbound::InboundMessage, outbound::OutboundMessage, serializer::Serializer,
@@ -20,17 +21,14 @@ use yaair::yaair::{
     network::Network,
 };
 
-pub use crate::{comm::ZenohNodeId, zenoh_impl::ZenohError};
+pub use crate::{comm::ZenohNodeId, messages::heartbit::HeartbitPublisher, zenoh_impl::ZenohError};
 use crate::{
     comm::{
         CommunicationLayer, MessagePublisher, MessageSubscriber, MessageSubscriberOptions,
         TopicKeyExpr,
     },
-    config::NetworkConfig,
-    messages::{
-        heartbit::{Heartbit, HeartbitPublisher},
-        store::AtomicMessagesStore,
-    },
+    config::ZenohNetworkConfig,
+    messages::{heartbit::Heartbit, store::AtomicMessagesStore},
     zenoh_impl::comm::{KeyExpr, Publisher, Session, Subscriber},
 };
 
@@ -50,7 +48,7 @@ pub struct ZenohNetwork<Ser: Sync + Send> {
 }
 
 impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
-    pub fn new(serializer: Ser, config: NetworkConfig) -> Result<Self, ZenohError> {
+    pub fn new(serializer: Ser, config: ZenohNetworkConfig) -> Result<Self, ZenohError> {
         let session = Session::init(config.zenoh)?;
         let context = Arc::new(NetworkContext {
             messages: AtomicMessagesStore::new(config.lifespan),
@@ -139,13 +137,11 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
             Err(e) => log::warn!("Failed to store heartbit: {e}"),
         }
     }
-}
 
-impl<Ser: Serializer + Sync + Send + Clone> ZenohNetwork<Ser> {
-    pub fn declare_heartbit_publisher(&self) -> Result<HeartbitPublisher<Ser>, ZenohError> {
+    pub fn declare_heartbit_publisher<'a>(&'a self) -> Result<HeartbitPublisher<Ser>, ZenohError> {
         let node_id = self.get_local_id();
         let keyexpr = self.heartbit_keyexpr.declare_join(&node_id.to_string())?;
-        HeartbitPublisher::try_declare(&self.session, keyexpr, self.context.serializer.clone())
+        HeartbitPublisher::try_declare(&self.session, keyexpr, self.context.clone())
     }
 }
 
@@ -166,10 +162,13 @@ impl<Ser: Serializer + Sync + Send> Network<ZenohNodeId> for ZenohNetwork<Ser> {
         log::info!("Preparing inbound message");
         let messages = &self.context.messages;
         log::debug!("Preparing snapshot of messages");
-        let snapshot = match messages
-            .clear_dead()
-            .and_then(|_| messages.messages_snapshot())
-        {
+        let snapshot = match messages.clear_dead().and_then(|expired| {
+            if !expired.is_empty() {
+                let expired_str = expired.into_iter().map(|e| e.to_string()).join(", ");
+                log::warn!("Expired nodes: {expired_str}");
+            }
+            messages.messages_snapshot()
+        }) {
             Ok(s) => {
                 log::debug!("Snapshot created successfully");
                 s

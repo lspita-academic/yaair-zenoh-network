@@ -1,5 +1,4 @@
-use std::{thread, time::Duration};
-
+use embassy_time::Timer;
 use zenoh_pico::{session::Session, zbytes::TryIntoZBytes};
 
 #[embassy_executor::task]
@@ -26,7 +25,7 @@ pub async fn pong(session: &'static Session) {
         let ping: usize = postcard::from_bytes(&bytes).expect("Failed to deserialize ping");
         log::info!("Received ping: {ping}");
 
-        thread::sleep(Duration::from_secs(2));
+        Timer::after_secs(2).await;
 
         let pong = ping + 1;
         log::info!("Publishing pong: {pong}");

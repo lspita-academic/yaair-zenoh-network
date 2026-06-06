@@ -89,13 +89,14 @@ where
     }
 }
 
-pub struct NetworkConfig {
+#[derive(Clone)]
+pub struct ZenohNetworkConfig {
     pub base_keyexpr: ConfigString,
     pub lifespan: Duration,
     pub zenoh: ZenohConfig,
 }
 
-impl From<ZenohConfig> for NetworkConfig {
+impl From<ZenohConfig> for ZenohNetworkConfig {
     fn from(zenoh: ZenohConfig) -> Self {
         Self {
             zenoh,

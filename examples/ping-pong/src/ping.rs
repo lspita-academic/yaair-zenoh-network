@@ -1,12 +1,12 @@
 #![cfg(target_os = "espidf")]
 
-use std::{thread, time::Duration};
-
 use zenoh_pico::{session::Session, zbytes::TryIntoZBytes};
 
 #[cfg(target_os = "espidf")]
 #[embassy_executor::task]
 pub async fn ping(session: &'static Session) {
+    use embassy_time::Timer;
+
     log::info!("Starting ping task");
     let publisher = session
         .declare_publisher(
@@ -21,10 +21,10 @@ pub async fn ping(session: &'static Session) {
         )
         .expect("Failed to declare pong subscriber");
 
-    thread::sleep(Duration::from_secs(2));
+    Timer::after_secs(2).await;
     let mut ping = 0usize;
     loop {
-        thread::sleep(Duration::from_secs(2));
+        Timer::after_secs(2).await;
 
         log::info!("Publishing ping: {ping}");
         let bytes = postcard::to_allocvec(&ping).expect("Failed to serialize ping");

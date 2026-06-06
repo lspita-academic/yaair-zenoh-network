@@ -6,6 +6,7 @@ rust-version.workspace = true
 
 [dependencies]
 embassy-executor.workspace = true
+embassy-time.workspace = true
 examples-common.workspace = true
 log.workspace = true
 postcard.workspace = true

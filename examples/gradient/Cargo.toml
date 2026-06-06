@@ -27,8 +27,14 @@ yaair-zenoh-network.workspace = true
 [build-dependencies]
 embuild.workspace = true
 
+[target.'cfg(all(not(target_os = "none"), not(target_os = "espidf")))'.dependencies]
+embassy-time = { workspace = true, features = ["std"] }
+
 [target.'cfg(target_os = "espidf")'.dependencies]
 critical-section.workspace = true
+embassy-time.workspace = true
 esp-idf-svc.workspace = true
-examples-common.workspace = true
-zenoh-pico.workspace = true
+
+[features]
+default = ["heartbit"]
+heartbit = []
