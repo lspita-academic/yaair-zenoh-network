@@ -13,7 +13,7 @@ use yaair_serde::yaair_serde::json::JsonSerializer;
 use yaair_zenoh_network::config::ConfigBuilderDefault;
 use yaair_zenoh_network::{
     ZenohNetwork, ZenohNodeId,
-    config::{ConfigBuilder, ZenohConfig, ZenohConfigBuilder, ZenohConfigBuilderOptions},
+    config::{ConfigBuilder, ZenohConfig, ZenohConfigBuilder},
 };
 
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -96,6 +96,8 @@ pub async fn gradient_main(node: Node, spawner: Spawner) {
 
     #[cfg(target_os = "espidf")]
     let zenoh_config_builder = {
+        use yaair_zenoh_network::config::ZenohConfigBuilderOptions;
+
         let wifi = examples_common::esp::start_wifi().await;
         let interface = wifi.netif().get_name().to_string();
         ZenohConfigBuilder::new(ZenohConfigBuilderOptions {
@@ -103,7 +105,7 @@ pub async fn gradient_main(node: Node, spawner: Spawner) {
         })
     };
     #[cfg(not(target_os = "espidf"))]
-    let zenoh_config_builder = ConfigBuilderDefault::default();
+    let zenoh_config_builder = ZenohConfigBuilder::default();
 
     let node_id = node.node_id();
     log::info!("Node id: {node_id}");
