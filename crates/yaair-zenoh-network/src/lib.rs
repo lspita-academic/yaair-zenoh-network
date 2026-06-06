@@ -1,6 +1,8 @@
-mod comm;
+pub(crate) mod comm;
 pub mod config;
-mod messages;
+pub mod heartbit;
+pub(crate) mod messages;
+
 #[cfg(zenoh_impl = "zenoh_full")]
 #[path = "zenoh_full/mod.rs"]
 mod zenoh_impl;
