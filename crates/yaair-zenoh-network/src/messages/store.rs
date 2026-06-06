@@ -9,14 +9,16 @@ use thiserror::Error;
 
 #[derive(Clone)]
 pub struct StoreEntity<T> {
-    message: T,
+    message: Option<T>,
+    lifespan: Duration,
     timestamp: SystemTime,
 }
 
 impl<T> StoreEntity<T> {
-    pub fn new(message: T) -> Self {
+    pub fn new(message: Option<T>, lifespan: Duration) -> Self {
         Self {
             message,
+            lifespan,
             timestamp: SystemTime::now(),
         }
     }
@@ -25,30 +27,29 @@ impl<T> StoreEntity<T> {
         self.timestamp
     }
 
+    pub fn lifespan(&self) -> Duration {
+        self.lifespan
+    }
+
+    pub fn message(&self) -> Option<&T> {
+        self.message.as_ref()
+    }
+
     pub fn update_message(&mut self, message: T) {
-        self.message = message;
+        self.message = Some(message);
         self.keep_alive();
     }
 
     pub fn keep_alive(&mut self) {
         self.timestamp = SystemTime::now();
     }
-
-    pub fn into_inner(self) -> T {
-        self.message
-    }
 }
 
-impl<T> From<T> for StoreEntity<T> {
-    fn from(value: T) -> Self {
-        StoreEntity::new(value)
-    }
-}
-
-type Storage<Id, T> = HashMap<Id, StoreEntity<T>>;
+type Map<K, T> = HashMap<K, T>;
+type Storage<Id, T> = Map<Id, StoreEntity<T>>;
 
 pub struct AtomicMessagesStore<Id, T> {
-    lifespan: Duration,
+    default_lifespan: Duration,
     storage: Mutex<Storage<Id, T>>,
 }
 
@@ -57,9 +58,9 @@ pub struct AtomicMessagesStore<Id, T> {
 pub struct PoisonedLockError;
 
 impl<Id: Eq + Hash + Clone, T> AtomicMessagesStore<Id, T> {
-    pub fn new(lifespan: Duration) -> Self {
+    pub fn new(default_lifespan: Duration) -> Self {
         Self {
-            lifespan,
+            default_lifespan,
             storage: Default::default(),
         }
     }
@@ -68,12 +69,12 @@ impl<Id: Eq + Hash + Clone, T> AtomicMessagesStore<Id, T> {
         self.storage.lock().map_err(|_| PoisonedLockError)
     }
 
-    pub fn store(&self, id: Id, message: T) -> Result<(), PoisonedLockError> {
+    pub fn store_message(&self, id: Id, message: T) -> Result<(), PoisonedLockError> {
         let mut storage = self.acquire_storage()?;
         if let Some(entity) = storage.get_mut(&id) {
             entity.update_message(message);
         } else {
-            storage.insert(id, StoreEntity::new(message));
+            storage.insert(id, StoreEntity::new(Some(message), self.default_lifespan));
         }
         Ok(())
     }
@@ -82,10 +83,9 @@ impl<Id: Eq + Hash + Clone, T> AtomicMessagesStore<Id, T> {
         let mut storage = self.acquire_storage()?;
         let expired_keys: Vec<_> = storage
             .iter()
-            .map(|(zid, m)| (zid, m.timestamp()))
-            .filter_map(|(zid, t)| {
-                t.elapsed().ok().and_then(|e| {
-                    if e >= self.lifespan {
+            .filter_map(|(zid, e)| {
+                e.timestamp().elapsed().ok().and_then(|elapsed| {
+                    if elapsed >= e.lifespan() {
                         Some(zid.clone())
                     } else {
                         None
@@ -101,7 +101,11 @@ impl<Id: Eq + Hash + Clone, T> AtomicMessagesStore<Id, T> {
 }
 
 impl<Id: Eq + Hash + Clone, T: Clone> AtomicMessagesStore<Id, T> {
-    pub fn snapshot(&self) -> Result<Storage<Id, T>, PoisonedLockError> {
-        self.acquire_storage().map(|s| s.clone())
+    pub fn messages_snapshot(&self) -> Result<Map<Id, T>, PoisonedLockError> {
+        let storage = self.acquire_storage()?;
+        Ok(storage
+            .iter()
+            .filter_map(|(id, e)| e.message().cloned().map(|m| (id.clone(), m)))
+            .collect())
     }
 }

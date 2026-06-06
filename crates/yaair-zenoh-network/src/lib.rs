@@ -112,7 +112,7 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
         log::info!("Sender: {}", outbound_message.sender);
         match context
             .messages
-            .store(outbound_message.sender, outbound_message.into_inner())
+            .store_message(outbound_message.sender, outbound_message.into_inner())
         {
             Ok(_) => log::info!("Message stored successfully"),
             Err(e) => log::warn!("Failed to store message: {e}"),
@@ -141,7 +141,7 @@ impl<Ser: Serializer + Sync + Send> Network<ZenohNodeId> for ZenohNetwork<Ser> {
         log::info!("Preparing inbound message");
         let messages = &self.context.messages;
         log::debug!("Preparing snapshot of messages");
-        let snapshot = match messages.clear_dead().and_then(|_| messages.snapshot()) {
+        let snapshot = match messages.clear_dead().and_then(|_| messages.messages_snapshot()) {
             Ok(s) => {
                 log::debug!("Snapshot created successfully");
                 s
@@ -152,11 +152,7 @@ impl<Ser: Serializer + Sync + Send> Network<ZenohNodeId> for ZenohNetwork<Ser> {
             }
         };
         log::debug!("Creating inbound message");
-        let inbound_message_map = snapshot
-            .into_iter()
-            .map(|(zid, message)| (zid, message.into_inner()))
-            .collect();
-        let inbound_message = InboundMessage::new(inbound_message_map);
+        let inbound_message = InboundMessage::new(snapshot);
         log::info!("Inbound message created");
         inbound_message
     }

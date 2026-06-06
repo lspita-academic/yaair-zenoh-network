@@ -4,5 +4,5 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize)]
 pub struct Heartbit {
-    pub lifespan: Duration
+    pub lifespan: Option<Duration>
 }
