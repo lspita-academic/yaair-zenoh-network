@@ -36,7 +36,7 @@ use crate::{
     zenoh_impl::comm::{KeyExpr, Publisher, Session, Subscriber},
 };
 
-pub struct NetworkContext<Ser: Sync + Send> {
+pub(crate) struct NetworkContext<Ser: Sync + Send> {
     messages: AtomicMessagesStore<ZenohNodeId, ValueTree>,
     serializer: Ser,
     node_id: ZenohNodeId,
