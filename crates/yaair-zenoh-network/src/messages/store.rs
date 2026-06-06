@@ -40,6 +40,7 @@ impl<T> StoreEntity<T> {
         Self::update(&mut self.message, Some(message))
     }
 
+    #[cfg(feature = "heartbit")]
     pub fn update_lifespan(&mut self, lifespan: Duration) -> Duration {
         self.keep_alive();
         Self::update(&mut self.lifespan, lifespan)
@@ -90,6 +91,7 @@ impl<Id: Eq + Hash + Clone, T> AtomicMessagesStore<Id, T> {
         })
     }
 
+    #[cfg(feature = "heartbit")]
     pub fn store_lifespan(
         &self,
         id: Id,
@@ -105,6 +107,7 @@ impl<Id: Eq + Hash + Clone, T> AtomicMessagesStore<Id, T> {
             }))
     }
 
+    #[cfg(feature = "heartbit")]
     pub fn keep_alive(&self, id: Id) -> Result<Option<SystemTime>, PoisonedLockError> {
         let mut storage = self.acquire_storage()?;
         Ok(storage

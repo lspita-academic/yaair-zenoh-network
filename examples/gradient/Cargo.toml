@@ -37,4 +37,4 @@ esp-idf-svc.workspace = true
 
 [features]
 default = ["heartbit"]
-heartbit = []
+heartbit = ["yaair-zenoh-network/heartbit"]

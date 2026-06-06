@@ -1,7 +1,7 @@
 use std::time::Duration;
 
 use embassy_time::Timer;
-use yaair_zenoh_network::HeartbitPublisher;
+use yaair_zenoh_network::heartbit::HeartbitPublisher;
 
 use crate::{EmbassyDuration, Serializer};
 

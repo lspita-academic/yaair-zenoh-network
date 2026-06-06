@@ -30,3 +30,7 @@ zenoh.workspace = true
 
 [target.'cfg(target_os = "espidf")'.dependencies]
 zenoh-pico.workspace = true
+
+[features]
+default = ["heartbit"]
+heartbit = []

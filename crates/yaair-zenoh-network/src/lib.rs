@@ -1,5 +1,7 @@
 pub(crate) mod comm;
 pub mod config;
+#[cfg(feature = "heartbit")]
+pub mod heartbit;
 pub(crate) mod messages;
 
 #[cfg(zenoh_impl = "zenoh_full")]
@@ -21,14 +23,16 @@ use yaair::yaair::{
     network::Network,
 };
 
-pub use crate::{comm::ZenohNodeId, messages::heartbit::HeartbitPublisher, zenoh_impl::ZenohError};
+#[cfg(feature = "heartbit")]
+use crate::heartbit::{Heartbit, HeartbitPublisher};
+pub use crate::{comm::ZenohNodeId, zenoh_impl::ZenohError};
 use crate::{
     comm::{
         CommunicationLayer, MessagePublisher, MessageSubscriber, MessageSubscriberOptions,
         TopicKeyExpr,
     },
     config::ZenohNetworkConfig,
-    messages::{heartbit::Heartbit, store::AtomicMessagesStore},
+    messages::store::AtomicMessagesStore,
     zenoh_impl::comm::{KeyExpr, Publisher, Session, Subscriber},
 };
 
@@ -42,9 +46,11 @@ pub struct ZenohNetwork<Ser: Sync + Send> {
     session: Session,
     context: Arc<NetworkContext<Ser>>,
     messages_publisher: Publisher,
+    #[cfg(feature = "heartbit")]
     heartbit_keyexpr: KeyExpr,
     // store subscribers to keep them alive
     _messages_subscriber: Subscriber,
+    #[cfg(feature = "heartbit")]
     _heartbit_subscriber: Subscriber,
 }
 
@@ -60,6 +66,7 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
         let base_keyexpr = KeyExpr::declare_topic(&config.base_keyexpr)?;
         let (messages_publisher, _messages_subscriber) =
             Self::init_messages(&session, context.clone(), &base_keyexpr)?;
+        #[cfg(feature = "heartbit")]
         let (heartbit_keyexpr, _heartbit_subscriber) =
             Self::init_heartbit(&session, context.clone(), &base_keyexpr)?;
 
@@ -67,8 +74,10 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
             session,
             context,
             messages_publisher,
+            #[cfg(feature = "heartbit")]
             heartbit_keyexpr,
             _messages_subscriber,
+            #[cfg(feature = "heartbit")]
             _heartbit_subscriber,
         })
     }
@@ -95,6 +104,7 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
         Ok((messages_publisher, messages_subscriber))
     }
 
+    #[cfg(feature = "heartbit")]
     fn init_heartbit(
         session: &Session,
         context: Arc<NetworkContext<Ser>>,
@@ -140,6 +150,7 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
         }
     }
 
+    #[cfg(feature = "heartbit")]
     fn on_heartbit(heartbit: Heartbit, context: &NetworkContext<Ser>) {
         let sender = heartbit.sender;
         if sender == context.node_id {
@@ -166,6 +177,7 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
         }
     }
 
+    #[cfg(feature = "heartbit")]
     pub fn declare_heartbit_publisher<'a>(&'a self) -> Result<HeartbitPublisher<Ser>, ZenohError> {
         let node_id = self.get_local_id();
         let keyexpr = self.heartbit_keyexpr.declare_join(&node_id.to_string())?;

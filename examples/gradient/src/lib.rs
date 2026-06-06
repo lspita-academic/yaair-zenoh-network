@@ -1,7 +1,6 @@
 #[cfg(feature = "heartbit")]
 mod heartbit;
 
-#[cfg(feature = "heartbit")]
 use std::time::Duration;
 use std::{array, cmp::Ordering, collections::HashMap};
 
@@ -15,7 +14,7 @@ use yaair::yaair::{
     network::Network,
 };
 use yaair_serde::yaair_serde::json::JsonSerializer;
-#[allow(unused_imports, reason = "Used by some targets implementation")]
+#[cfg_attr(target_os = "espidf", allow(unused_imports))]
 use yaair_zenoh_network::config::ConfigBuilderDefault;
 use yaair_zenoh_network::{
     ZenohNetwork, ZenohNodeId,
