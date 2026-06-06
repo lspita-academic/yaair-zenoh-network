@@ -18,9 +18,8 @@ use yaair::yaair::{
     },
     network::Network,
 };
-use zenoh::comm::KeyExpr;
 
-pub use crate::comm::ZenohNodeId;
+pub use crate::{comm::ZenohNodeId, zenoh::ZenohError};
 use crate::{
     comm::{
         CommunicationLayer, MessagePublisher, MessageSubscriber, MessageSubscriberOptions,
@@ -28,7 +27,7 @@ use crate::{
     },
     config::NetworkConfig,
     messages::store::AtomicMessagesStore,
-    zenoh::comm::{Publisher, Session, Subscriber},
+    zenoh::comm::{KeyExpr, Publisher, Session, Subscriber},
 };
 
 pub struct NetworkContext<Ser: Sync + Send> {

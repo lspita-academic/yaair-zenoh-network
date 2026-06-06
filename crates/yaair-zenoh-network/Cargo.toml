@@ -11,6 +11,7 @@ bindings_module = "zenoh_pico"
 
 [dependencies]
 hex.workspace = true
+itertools.workspace = true
 log.workspace = true
 net-literals.workspace = true
 serde.workspace = true
@@ -24,6 +25,7 @@ strum.workspace = true
 thiserror.workspace = true
 
 [target.'cfg(all(not(target_os = "none"), not(target_os = "espidf")))'.dependencies]
+serde_json.workspace = true
 zenoh.workspace = true
 
 [target.'cfg(target_os = "espidf")'.dependencies]

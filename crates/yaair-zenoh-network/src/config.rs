@@ -1,4 +1,4 @@
-use std::{borrow::Cow, net::SocketAddrV4, time::Duration};
+use std::{borrow::Cow, fmt::Display, net::SocketAddrV4, time::Duration};
 
 use net_literals::addrv4;
 use strum::Display;
@@ -32,7 +32,18 @@ impl From<SocketAddrV4> for Locator {
     }
 }
 
-#[derive(Clone, Copy)]
+impl Display for Locator {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}/{}", self.protocol, self.address)?;
+        if let Some(ref interface) = self.interface {
+            write!(f, "#iface={interface}")?;
+        }
+        Ok(())
+    }
+}
+
+#[derive(Clone, Copy, Display, PartialEq, Eq, Hash)]
+#[strum(serialize_all = "lowercase")]
 pub enum PeerType {
     Peer,
     Client,
@@ -69,7 +80,10 @@ pub trait ConfigBuilderDefault {
     fn default() -> Self;
 }
 
-impl<T: ConfigBuilder> ConfigBuilderDefault for T where T::InitOptions: Default {
+impl<T: ConfigBuilder> ConfigBuilderDefault for T
+where
+    T::InitOptions: Default,
+{
     fn default() -> Self {
         Self::new(Default::default())
     }
