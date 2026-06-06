@@ -6,7 +6,7 @@ use zenoh_pico::zid::ZId;
 
 use crate::{
     ZenohNodeId,
-    comm::{FromZenohNodeId, IntoZenohNodeId},
+    id::{FromZenohNodeId, IntoZenohNodeId},
 };
 
 impl FromZenohNodeId for ZId {

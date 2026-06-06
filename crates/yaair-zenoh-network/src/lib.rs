@@ -20,6 +20,7 @@ pub(crate) mod comm;
 pub mod config;
 #[cfg(feature = "heartbit")]
 pub mod heartbit;
+pub(crate) mod id;
 pub(crate) mod messages;
 
 #[cfg(zenoh_impl = "zenoh_full")]
@@ -43,7 +44,6 @@ use yaair::yaair::{
 
 #[cfg(feature = "heartbit")]
 use crate::heartbit::{Heartbit, HeartbitPublisher};
-pub use crate::{comm::ZenohNodeId, zenoh_impl::ZenohError};
 use crate::{
     comm::{
         CommunicationLayer, MessagePublisher, MessageSubscriber, MessageSubscriberOptions,
@@ -53,6 +53,7 @@ use crate::{
     messages::store::AtomicMessagesStore,
     zenoh_impl::comm::{KeyExpr, Publisher, Session, Subscriber},
 };
+pub use crate::{id::ZenohNodeId, zenoh_impl::ZenohError};
 
 pub(crate) struct NetworkContext<Ser: Sync + Send> {
     messages: AtomicMessagesStore<ZenohNodeId, ValueTree>,

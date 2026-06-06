@@ -1,46 +1,9 @@
-use std::{fmt::Display, hash::Hash, sync::Arc};
+use std::sync::Arc;
 
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use yaair::yaair::messages::serializer::Serializer;
 
-use crate::NetworkContext;
-
-pub type ZenohNodeIDBytes = [u8; 16];
-
-#[derive(Serialize, Deserialize, Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
-pub struct ZenohNodeId(ZenohNodeIDBytes);
-
-impl ZenohNodeId {
-    pub fn as_bytes(&self) -> &ZenohNodeIDBytes {
-        &self.0
-    }
-
-    pub fn into_bytes(self) -> ZenohNodeIDBytes {
-        self.0
-    }
-}
-
-#[cfg_attr(zenoh_impl = "zenoh_full", allow(dead_code))]
-pub(crate) trait FromZenohNodeId {
-    fn from_node_id(node_id: ZenohNodeId) -> Self;
-}
-
-#[cfg_attr(zenoh_impl = "zenoh_full", allow(dead_code))]
-pub(crate) trait IntoZenohNodeId {
-    fn into_node_id(self) -> ZenohNodeId;
-}
-
-impl From<ZenohNodeIDBytes> for ZenohNodeId {
-    fn from(value: ZenohNodeIDBytes) -> Self {
-        Self(value)
-    }
-}
-
-impl Display for ZenohNodeId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        hex::encode(&self.0).fmt(f)
-    }
-}
+use crate::{NetworkContext, ZenohNodeId};
 
 pub trait CommunicationLayer: Sized {
     type Err;
