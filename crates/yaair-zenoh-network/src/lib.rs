@@ -1,6 +1,5 @@
 pub(crate) mod comm;
 pub mod config;
-pub mod heartbit;
 pub(crate) mod messages;
 
 #[cfg(zenoh_impl = "zenoh_full")]
@@ -41,35 +40,21 @@ pub struct ZenohNetwork<Ser: Sync + Send> {
     session: Session,
     context: Arc<NetworkContext<Ser>>,
     messages_publisher: Publisher,
-    _messages_subscriber: Subscriber, // store it to keep it alive
+    // store subscribers to keep them alive
+    _messages_subscriber: Subscriber,
 }
 
 impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
-    pub fn new(
-        serializer: Ser,
-        config: NetworkConfig,
-    ) -> Result<Self, <Session as CommunicationLayer>::Err> {
+    pub fn new(serializer: Ser, config: NetworkConfig) -> Result<Self, ZenohError> {
         let session = Session::init(config.zenoh)?;
         let context = Arc::new(NetworkContext {
             messages: AtomicMessagesStore::new(config.lifespan),
             serializer,
         });
 
-        let node_id = session.node_id();
         let base_keyexpr = KeyExpr::declare_topic(&config.base_keyexpr)?;
-        let messages_keyexpr = base_keyexpr.declare_join("messages")?;
-        let messages_publisher = Publisher::try_declare(
-            &session,
-            messages_keyexpr.declare_join(&node_id.to_string())?,
-        )?;
-        let messages_subscriber = Subscriber::try_declare_background(
-            &session,
-            messages_keyexpr.declare_join("*")?,
-            MessageSubscriberOptions {
-                callback: Self::on_outbound_message,
-                context: context.clone(),
-            },
-        )?;
+        let (messages_publisher, messages_subscriber) =
+            Self::init_messages(&session, context.clone(), &base_keyexpr)?;
 
         Ok(Self {
             session,
@@ -77,6 +62,28 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
             messages_publisher,
             _messages_subscriber: messages_subscriber,
         })
+    }
+
+    fn init_messages(
+        session: &Session,
+        context: Arc<NetworkContext<Ser>>,
+        base_keyexpr: &KeyExpr,
+    ) -> Result<(Publisher, Subscriber), ZenohError> {
+        let node_id = session.node_id();
+        let messages_keyexpr = base_keyexpr.declare_join("messages")?;
+        let messages_publisher = Publisher::try_declare(
+            session,
+            messages_keyexpr.declare_join(&node_id.to_string())?,
+        )?;
+        let messages_subscriber = Subscriber::try_declare_background(
+            &session,
+            messages_keyexpr.declare_join("*")?,
+            MessageSubscriberOptions {
+                context,
+                callback: Self::on_outbound_message,
+            },
+        )?;
+        Ok((messages_publisher, messages_subscriber))
     }
 
     fn on_outbound_message(
