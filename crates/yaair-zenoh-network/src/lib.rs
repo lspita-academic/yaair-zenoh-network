@@ -27,7 +27,10 @@ use crate::{
         TopicKeyExpr,
     },
     config::NetworkConfig,
-    messages::{heartbit::Heartbit, store::AtomicMessagesStore},
+    messages::{
+        heartbit::{Heartbit, HeartbitPublisher},
+        store::AtomicMessagesStore,
+    },
     zenoh_impl::comm::{KeyExpr, Publisher, Session, Subscriber},
 };
 
@@ -131,6 +134,10 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
             Ok(_) => log::info!("Heartbit stored successfully"),
             Err(e) => log::warn!("Failed to store heartbit: {e}"),
         }
+    }
+
+    pub fn heartbit_publisher(&self) -> HeartbitPublisher {
+        todo!()
     }
 }
 
