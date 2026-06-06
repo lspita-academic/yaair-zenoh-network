@@ -40,6 +40,11 @@ impl<T> StoreEntity<T> {
         self.keep_alive();
     }
 
+    pub fn update_lifespan(&mut self, lifespan: Duration) {
+        self.lifespan = lifespan;
+        self.keep_alive();
+    }
+
     pub fn keep_alive(&mut self) {
         self.timestamp = SystemTime::now();
     }
@@ -75,6 +80,26 @@ impl<Id: Eq + Hash + Clone, T> AtomicMessagesStore<Id, T> {
             entity.update_message(message);
         } else {
             storage.insert(id, StoreEntity::new(Some(message), self.default_lifespan));
+        }
+        Ok(())
+    }
+
+    pub fn store_lifespan(&self, id: Id, lifespan: Duration) -> Result<(), PoisonedLockError> {
+        let mut storage = self.acquire_storage()?;
+        if let Some(entity) = storage.get_mut(&id) {
+            entity.update_lifespan(lifespan);
+        } else {
+            storage.insert(id, StoreEntity::new(None, lifespan));
+        }
+        Ok(())
+    }
+
+    pub fn keep_alive(&self, id: Id) -> Result<(), PoisonedLockError> {
+        let mut storage = self.acquire_storage()?;
+        if let Some(entity) = storage.get_mut(&id) {
+            entity.keep_alive();
+        } else {
+            storage.insert(id, StoreEntity::new(None, self.default_lifespan));
         }
         Ok(())
     }
