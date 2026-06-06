@@ -27,7 +27,7 @@ use crate::{
         TopicKeyExpr,
     },
     config::NetworkConfig,
-    messages::store::AtomicMessagesStore,
+    messages::{heartbit::Heartbit, store::AtomicMessagesStore},
     zenoh_impl::comm::{KeyExpr, Publisher, Session, Subscriber},
 };
 
@@ -42,6 +42,7 @@ pub struct ZenohNetwork<Ser: Sync + Send> {
     messages_publisher: Publisher,
     // store subscribers to keep them alive
     _messages_subscriber: Subscriber,
+    _heartbit_subscriber: Subscriber,
 }
 
 impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
@@ -53,14 +54,16 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
         });
 
         let base_keyexpr = KeyExpr::declare_topic(&config.base_keyexpr)?;
-        let (messages_publisher, messages_subscriber) =
+        let (messages_publisher, _messages_subscriber) =
             Self::init_messages(&session, context.clone(), &base_keyexpr)?;
+        let _heartbit_subscriber = Self::init_heartbit(&session, context.clone(), &base_keyexpr)?;
 
         Ok(Self {
             session,
             context,
             messages_publisher,
-            _messages_subscriber: messages_subscriber,
+            _messages_subscriber,
+            _heartbit_subscriber,
         })
     }
 
@@ -77,13 +80,29 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
         )?;
         let messages_subscriber = Subscriber::try_declare_background(
             &session,
-            messages_keyexpr.declare_join("*")?,
+            messages_keyexpr.star()?,
             MessageSubscriberOptions {
                 context,
                 callback: Self::on_outbound_message,
             },
         )?;
         Ok((messages_publisher, messages_subscriber))
+    }
+
+    fn init_heartbit(
+        session: &Session,
+        context: Arc<NetworkContext<Ser>>,
+        base_keyexpr: &KeyExpr,
+    ) -> Result<Subscriber, ZenohError> {
+        let heartbit_keyexpr = base_keyexpr.declare_join("heartbit")?;
+        Subscriber::try_declare_background(
+            &session,
+            heartbit_keyexpr.star()?,
+            MessageSubscriberOptions {
+                context,
+                callback: Self::on_heartbit,
+            },
+        )
     }
 
     fn on_outbound_message(
@@ -98,6 +117,10 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
             Ok(_) => log::info!("Message stored successfully"),
             Err(e) => log::warn!("Failed to store message: {e}"),
         }
+    }
+
+    fn on_heartbit(heartbit: Heartbit, context: &NetworkContext<Ser>) {
+        todo!()
     }
 }
 

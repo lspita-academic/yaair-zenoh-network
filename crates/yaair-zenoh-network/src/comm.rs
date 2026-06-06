@@ -58,6 +58,10 @@ pub trait TopicKeyExpr<Comm: CommunicationLayer>: Sized {
     fn declare_join(&self, topic: &str) -> Result<Self, Comm::Err> {
         Self::declare_topic(topic).and_then(|k| self.join_topics(&k))
     }
+
+    fn star(&self) -> Result<Self, Comm::Err> {
+        self.declare_join("*")
+    }
 }
 
 pub struct MessageSubscriberOptions<T, Ser: Serializer + Sync + Send> {
