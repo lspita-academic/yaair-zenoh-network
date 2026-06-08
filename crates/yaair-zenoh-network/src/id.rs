@@ -1,17 +1,24 @@
+//! Primitives related to what the [`ZenohNetwork`](crate::ZenohNetwork) uses to
+//! identify nodes.
+
 use std::fmt::Display;
 
 use serde::{Deserialize, Serialize};
 
+/// An array representing the underlying data of a [`ZenohNodeId`].
 pub type ZenohNodeIDBytes = [u8; 16];
 
+/// A unique identifier for a node in the [`ZenohNetwork`](crate::ZenohNetwork).
 #[derive(Serialize, Deserialize, Hash, PartialEq, Eq, PartialOrd, Ord, Clone, Copy)]
 pub struct ZenohNodeId(ZenohNodeIDBytes);
 
 impl ZenohNodeId {
+    /// Returns a reference to the underlying bytes.
     pub fn as_bytes(&self) -> &ZenohNodeIDBytes {
         &self.0
     }
 
+    /// Converts [`self`](Self) into the underlying bytes.
     pub fn into_bytes(self) -> ZenohNodeIDBytes {
         self.0
     }
