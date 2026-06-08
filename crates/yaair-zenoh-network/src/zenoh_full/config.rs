@@ -24,11 +24,11 @@ impl From<PeerType> for WhatAmI {
 // <https://github.com/eclipse-zenoh/zenoh-pico/tree/1.9.0#34-basic-pubsub-example---p2p-over-udp-multicast>
 const ZENOH_PICO_BATCH_MULTICAST_SIZE: usize = 2048;
 
-pub struct ZenohConfigBuilderOptions {
+pub struct ZenohConfigBuilderInitOptions {
     pub batch_multicast_size: usize,
 }
 
-impl Default for ZenohConfigBuilderOptions {
+impl Default for ZenohConfigBuilderInitOptions {
     fn default() -> Self {
         Self {
             batch_multicast_size: ZENOH_PICO_BATCH_MULTICAST_SIZE,
@@ -50,7 +50,7 @@ impl ZenohConfigBuilder {
 impl ConfigBuilder for ZenohConfigBuilder {
     type Err = ZenohError;
     type Config = ZenohConfig;
-    type InitOptions = ZenohConfigBuilderOptions;
+    type InitOptions = ZenohConfigBuilderInitOptions;
 
     fn new(options: Self::InitOptions) -> Self {
         let builder = Self {

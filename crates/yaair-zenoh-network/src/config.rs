@@ -24,7 +24,7 @@ pub use crate::zenoh_impl::config::ZenohConfigBuilder;
 /// These represent the required options that must be provided upfront.
 /// The shape of this struct can change based on the zenoh implementation being
 /// used.
-pub use crate::zenoh_impl::config::ZenohConfigBuilderOptions;
+pub use crate::zenoh_impl::config::ZenohConfigBuilderInitOptions;
 
 pub type ConfigString = Cow<'static, str>;
 

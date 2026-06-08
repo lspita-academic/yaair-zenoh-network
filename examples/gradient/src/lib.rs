@@ -111,11 +111,11 @@ pub async fn gradient_main(node: Node, spawner: Spawner) {
 
     #[cfg(target_os = "espidf")]
     let zenoh_config_builder = {
-        use yaair_zenoh_network::config::ZenohConfigBuilderOptions;
+        use yaair_zenoh_network::config::ZenohConfigBuilderInitOptions;
 
         let wifi = examples_common::esp::start_wifi().await;
         let interface = wifi.netif().get_name().to_string();
-        ZenohConfigBuilder::new(ZenohConfigBuilderOptions {
+        ZenohConfigBuilder::new(ZenohConfigBuilderInitOptions {
             interface: interface.into(),
         })
         .set_default_options()
