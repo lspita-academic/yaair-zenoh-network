@@ -1,3 +1,6 @@
+//! Cross-platform types and traits to configure both the
+//! [`ZenohNetwork`](crate::ZenohNetwork) and the zenoh implementation used.
+
 use std::{borrow::Cow, fmt::Display, net::SocketAddrV4, time::Duration};
 
 use net_literals::addrv4;
