@@ -10,7 +10,7 @@ rust-version = "1.93"
 description = "A zenoh based network for YAAIR"
 repository = "https://github.com/lspita-academic/yaair-zenoh-network"
 keywords = ["network", "yaair", "zenoh"]
-categories = ["network-programming", "embedded"]
+categories = ["embedded", "network-programming"]
 
 [workspace.dependencies]
 critical-section = { version = "1.2", default-features = false, features = [
@@ -53,6 +53,7 @@ yaair = "0.4"
 yaair_serde = "0.2"
 yaair-zenoh-network = { path = "crates/yaair-zenoh-network" }
 zenoh = "1.9"
+zenoh-pico-build-defaults = { path = "crates/zenoh-pico-build-defaults" }
 zenoh-pico = { path = "crates/zenoh-pico" }
 zenoh-pico-macros = { path = "crates/zenoh-pico-macros" }
 zenoh-pico-sys = { path = "crates/zenoh-pico-sys" }

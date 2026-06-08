@@ -4,8 +4,8 @@ version.workspace = true
 edition.workspace = true
 rust-version.workspace = true
 
-[target.'cfg(target_os = "espidf")'.dependencies]
-esp-idf-svc.workspace = true
-
 [build-dependencies]
 embuild.workspace = true
+
+[target.'cfg(target_os = "espidf")'.dependencies]
+esp-idf-svc.workspace = true
