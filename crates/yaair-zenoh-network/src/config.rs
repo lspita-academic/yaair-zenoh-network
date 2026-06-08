@@ -55,7 +55,7 @@ pub trait ConfigBuilder: Sized {
     type Config;
     type InitOptions;
 
-    fn uninitialized(options: Self::InitOptions) -> Self;
+    fn new(options: Self::InitOptions) -> Self;
     fn id(self, id: ZenohNodeId) -> Self;
     fn peer_type(self, peer_type: PeerType) -> Self;
     fn connect<L: Into<Locator>>(self, locator: L) -> Self;
@@ -66,9 +66,8 @@ pub trait ConfigBuilder: Sized {
     fn scouting_mask<PeerTypes: AsRef<[PeerType]>>(self, peer_types: PeerTypes) -> Self;
     fn build(self) -> Result<Self::Config, Self::Err>;
 
-    fn new(options: Self::InitOptions) -> Self {
-        Self::uninitialized(options)
-            .peer_type(PeerType::Peer)
+    fn set_default_options(self) -> Self {
+        self.peer_type(PeerType::Peer)
             .multicast_scouting(true)
             .scouting_timeout(Duration::from_secs(30))
             .multicast_locator(addrv4!("224.0.0.224:7446"))
@@ -77,15 +76,15 @@ pub trait ConfigBuilder: Sized {
 }
 
 pub trait ConfigBuilderDefault {
-    fn default() -> Self;
+    fn with_default_options() -> Self;
 }
 
 impl<T: ConfigBuilder> ConfigBuilderDefault for T
 where
     T::InitOptions: Default,
 {
-    fn default() -> Self {
-        Self::new(Default::default())
+    fn with_default_options() -> Self {
+        Self::new(Default::default()).set_default_options()
     }
 }
 

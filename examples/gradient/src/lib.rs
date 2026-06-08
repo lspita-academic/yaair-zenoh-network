@@ -118,9 +118,10 @@ pub async fn gradient_main(node: Node, spawner: Spawner) {
         ZenohConfigBuilder::new(ZenohConfigBuilderOptions {
             interface: interface.into(),
         })
+        .set_default_options()
     };
     #[cfg(not(target_os = "espidf"))]
-    let zenoh_config_builder = ZenohConfigBuilder::default();
+    let zenoh_config_builder = ZenohConfigBuilder::with_default_options();
 
     let node_id = node.node_id();
     log::info!("Node id: {node_id}");
