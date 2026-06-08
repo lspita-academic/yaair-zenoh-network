@@ -7,7 +7,17 @@ use net_literals::addrv4;
 use strum::Display;
 
 use crate::ZenohNodeId;
-pub use crate::zenoh_impl::config::{ZenohConfig, ZenohConfigBuilder, ZenohConfigBuilderOptions};
+/// A configuration for the zenoh implementation used by the
+/// [`ZenohNetwork`](crate::ZenohNetwork).
+///
+/// - If Zenoh is used, than it corresponds to <zenoh::Config>.
+/// - If Zenoh pico is used, than it corresponds to a wrapper around the C
+///   config struct.
+///
+/// In both cases, this struct SHOULD be build from the [`ZenohConfigBuilder`]
+/// and not further modified.
+pub use crate::zenoh_impl::config::ZenohConfig;
+pub use crate::zenoh_impl::config::{ZenohConfigBuilder, ZenohConfigBuilderOptions};
 
 pub type ConfigString = Cow<'static, str>;
 
