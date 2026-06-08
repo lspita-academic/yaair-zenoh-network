@@ -17,7 +17,14 @@ use crate::ZenohNodeId;
 /// In both cases, this struct SHOULD be build from the [`ZenohConfigBuilder`]
 /// and not further modified.
 pub use crate::zenoh_impl::config::ZenohConfig;
-pub use crate::zenoh_impl::config::{ZenohConfigBuilder, ZenohConfigBuilderOptions};
+/// A builder to create a [`ZenohConfig`].
+pub use crate::zenoh_impl::config::ZenohConfigBuilder;
+/// Initialization options to create a [`ZenohConfigBuilder`].
+///
+/// These represent the required options that must be provided upfront.
+/// The shape of this struct can change based on the zenoh implementation being
+/// used.
+pub use crate::zenoh_impl::config::ZenohConfigBuilderOptions;
 
 pub type ConfigString = Cow<'static, str>;
 
