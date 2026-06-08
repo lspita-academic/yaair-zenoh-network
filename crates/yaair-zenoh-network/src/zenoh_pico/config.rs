@@ -36,7 +36,7 @@ impl From<PeerType> for WhatAmI {
     }
 }
 
-pub struct ZenohConfigBuilderOptions {
+pub struct ZenohConfigBuilderInitOptions {
     // interface is required for multicast, and it's rare that multicast will
     // be disabled, so it's not an [Option](Option) type.
     //
@@ -47,7 +47,7 @@ pub struct ZenohConfigBuilderOptions {
 pub struct ZenohConfigBuilder {
     pico_builder: ZenohPicoConfigBuilder,
     peer_type: Option<PeerType>,
-    options: ZenohConfigBuilderOptions,
+    options: ZenohConfigBuilderInitOptions,
 }
 
 impl ZenohConfigBuilder {
@@ -63,7 +63,7 @@ impl ZenohConfigBuilder {
 impl ConfigBuilder for ZenohConfigBuilder {
     type Err = ZenohError;
     type Config = ZenohConfig;
-    type InitOptions = ZenohConfigBuilderOptions;
+    type InitOptions = ZenohConfigBuilderInitOptions;
 
     fn new(options: Self::InitOptions) -> Self {
         Self {
