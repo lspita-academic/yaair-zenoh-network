@@ -16,8 +16,9 @@ use yaair_serde::yaair_serde::json::JsonSerializer;
 #[cfg_attr(target_os = "espidf", allow(unused_imports))]
 use yaair_zenoh_network::config::ConfigBuilderDefault;
 use yaair_zenoh_network::{
-    ZenohNetwork, ZenohNodeId,
+    ZenohNetwork,
     config::{ConfigBuilder, ZenohConfigBuilder, ZenohNetworkConfig},
+    id::ZenohNodeId,
 };
 
 pub type Serializer = JsonSerializer;
