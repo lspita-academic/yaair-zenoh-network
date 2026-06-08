@@ -21,20 +21,20 @@ impl From<PeerType> for WhatAmI {
     }
 }
 
+// Multicast communication does not perform any negotiation upon group
+// joining.
+// Because of that, it is important that all transport parameters are the same
+// to make sure all your nodes in the system can communicate.
+//
 // <https://github.com/eclipse-zenoh/zenoh-pico/tree/1.9.0#34-basic-pubsub-example---p2p-over-udp-multicast>
-const ZENOH_PICO_BATCH_MULTICAST_SIZE: usize = 2048;
-
-pub struct ZenohConfigBuilderInitOptions {
-    pub batch_multicast_size: usize,
+fn batch_multicast_size() -> usize {
+    zenoh_pico_build_defaults::batch_multicast_size_str()
+        .parse()
+        .expect("Should be a valid usize")
 }
 
-impl Default for ZenohConfigBuilderInitOptions {
-    fn default() -> Self {
-        Self {
-            batch_multicast_size: ZENOH_PICO_BATCH_MULTICAST_SIZE,
-        }
-    }
-}
+#[derive(Default)]
+pub struct ZenohConfigBuilderInitOptions;
 
 pub struct ZenohConfigBuilder {
     options_map: HashMap<String, serde_json::Value>,
@@ -52,13 +52,13 @@ impl ConfigBuilder for ZenohConfigBuilder {
     type Config = ZenohConfig;
     type InitOptions = ZenohConfigBuilderInitOptions;
 
-    fn new(options: Self::InitOptions) -> Self {
+    fn new(_: Self::InitOptions) -> Self {
         let builder = Self {
             options_map: Default::default(),
         };
         builder.option_insert(
             "transport/link/tx/batch_size",
-            json!(options.batch_multicast_size),
+            json!(batch_multicast_size()),
         )
     }
 

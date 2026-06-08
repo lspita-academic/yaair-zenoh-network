@@ -1,0 +1,5 @@
+[package]
+name = "zenoh-pico-build-defaults"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
