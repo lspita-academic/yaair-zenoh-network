@@ -65,7 +65,7 @@ impl ConfigBuilder for ZenohConfigBuilder {
     type Config = ZenohConfig;
     type InitOptions = ZenohConfigBuilderOptions;
 
-    fn uninitialized(options: Self::InitOptions) -> Self {
+    fn new(options: Self::InitOptions) -> Self {
         Self {
             options,
             pico_builder: Default::default(),

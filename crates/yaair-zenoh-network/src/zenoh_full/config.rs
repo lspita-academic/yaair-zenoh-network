@@ -52,7 +52,7 @@ impl ConfigBuilder for ZenohConfigBuilder {
     type Config = ZenohConfig;
     type InitOptions = ZenohConfigBuilderOptions;
 
-    fn uninitialized(options: Self::InitOptions) -> Self {
+    fn new(options: Self::InitOptions) -> Self {
         let builder = Self {
             options_map: Default::default(),
         };
