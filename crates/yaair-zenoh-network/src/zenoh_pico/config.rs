@@ -10,8 +10,8 @@ use zenoh_pico::{
 
 use crate::{
     ZenohNodeId,
-    id::FromZenohNodeId,
     config::{ConfigBuilder, ConfigString, Locator, PeerType},
+    id::FromZenohNodeId,
 };
 
 impl TryFrom<PeerType> for ConfigMode {
@@ -37,10 +37,13 @@ impl From<PeerType> for WhatAmI {
 }
 
 pub struct ZenohConfigBuilderInitOptions {
-    // interface is required for multicast, and it's rare that multicast will
-    // be disabled, so it's not an [Option](Option) type.
-    //
-    // <https://github.com/eclipse-zenoh/zenoh-pico#34-basic-pubsub-example---p2p-over-udp-multicast>
+    /// Name of the interface to use by default for any [`Locator`].
+    ///
+    /// With zenoh pico, the interface is required to be explicit for multicast
+    /// scouting, and it's rare that multicast will be disabled, that's why it's
+    /// not an [Option](Option) type.
+    ///
+    /// <https://github.com/eclipse-zenoh/zenoh-pico#34-basic-pubsub-example---p2p-over-udp-multicast>
     pub interface: ConfigString,
 }
 
