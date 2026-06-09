@@ -69,7 +69,7 @@ pub(crate) struct NetworkContext<Ser: Sync + Send> {
 /// with other topics.
 ///
 /// If the [`heartbit`](crate#features) feature is enabled, it also listens for
-/// [`Heartbit`] messages and provides the ability to declare an
+/// heartbit messages and provides the ability to declare an
 /// [`HeartbitPublisher`] to notify the other peers.
 pub struct ZenohNetwork<Ser: Sync + Send> {
     session: Session,
