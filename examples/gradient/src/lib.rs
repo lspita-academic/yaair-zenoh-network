@@ -75,7 +75,7 @@ impl GradientEnv {
 
 fn gradient(
     env: &GradientEnv,
-    vm: &mut VM<ZenohNodeId, JsonSerializer>,
+    vm: &mut VM<ZenohNodeId, Serializer>,
 ) -> Result<f32, AggregateError> {
     let initial = f32::MAX;
     vm.share(&initial, |_, field| {
@@ -95,7 +95,7 @@ async fn gradient_task(node: Node, network: ZenohNetwork<Serializer>) {
         node,
         is_source: node.is_source(),
     };
-    let mut engine = Engine::new(network, env, JsonSerializer, gradient);
+    let mut engine = Engine::new(network, env, Serializer {}, gradient);
     loop {
         match engine.cycle() {
             Ok(result) => log::info!("Gradient result: {result:?}"),
@@ -135,7 +135,7 @@ pub async fn gradient_main(node: Node, spawner: Spawner) {
         ..zenoh_config.into()
     };
     let network =
-        ZenohNetwork::new(JsonSerializer, network_config).expect("Failed to create zenoh network");
+        ZenohNetwork::new(Serializer {}, network_config).expect("Failed to create zenoh network");
     log::info!("Network id: {}", network.get_local_id());
 
     #[cfg(feature = "heartbit")]
