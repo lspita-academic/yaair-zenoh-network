@@ -20,6 +20,10 @@ pub(crate) struct Heartbit {
     pub lifespan: Option<Duration>,
 }
 
+/// A publisher for heartbit messages.
+///
+/// It can be created by [declaring it from a
+/// `ZenohNetwork`](crate::ZenohNetwork::declare_heartbit_publisher).
 pub struct HeartbitPublisher<Ser: Serializer + Sync + Send> {
     node_id: ZenohNodeId,
     network_context: Arc<NetworkContext<Ser>>,
@@ -41,10 +45,20 @@ impl<'a, Ser: Serializer + Sync + Send> HeartbitPublisher<Ser> {
         })
     }
 
+    /// Publish a keepalive message for the node.
+    ///
+    /// This allows other nodes to know the caller is alive and update the
+    /// timestamp of the last message to reset the countdown for considering the
+    /// node offline.
     pub fn put_keep_alive(&self) {
         self.put_heartbit(self.heartbit(None));
     }
 
+    /// Publish a new lifespan to use for the node.
+    ///
+    /// This allows other nodes to know the caller should be considered alive
+    /// for a different lifespan than [the default of the
+    /// network](crate::config::ZenohNetworkConfig::lifespan).
     pub fn put_lifespan(&self, lifespan: Duration) {
         self.put_heartbit(self.heartbit(Some(lifespan)));
     }
