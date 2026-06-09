@@ -10,7 +10,7 @@ use crate::{
 };
 
 #[derive(Serialize, Deserialize)]
-pub struct Heartbit {
+pub(crate) struct Heartbit {
     pub sender: ZenohNodeId,
     pub lifespan: Option<Duration>,
 }
