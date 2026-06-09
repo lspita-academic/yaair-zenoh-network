@@ -132,7 +132,8 @@ pub trait ConfigBuilder: Sized {
 }
 
 /// Extension trait for [`ConfigBuilder`] types whose
-/// [`InitOptions`](ConfigBuilder::InitOptions) implement [`Default`](trait@Default).
+/// [`InitOptions`](ConfigBuilder::InitOptions) implement
+/// [`Default`](trait@Default).
 ///
 /// This is a workaround for the orphan rule, which prevents a blanket
 /// `impl<T: ConfigBuilder> Default for T`.
