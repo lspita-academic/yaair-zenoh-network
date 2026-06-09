@@ -11,7 +11,7 @@
 //! You can find a full aggregate computing example using yaair
 //! [here](https://github.com/lspita-academic/yaair-zenoh-network/tree/main/examples/gradient)
 //!
-//! ```rust
+//! ```
 //! # use yaair_zenoh_network::{
 //! #     ZenohNetwork,
 //! #     id::ZenohNodeId,
