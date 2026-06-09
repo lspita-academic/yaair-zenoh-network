@@ -132,7 +132,7 @@ pub trait ConfigBuilder: Sized {
 }
 
 /// Extension trait for [`ConfigBuilder`] types whose
-/// [`InitOptions`](ConfigBuilder::InitOptions) implement [`Default`].
+/// [`InitOptions`](ConfigBuilder::InitOptions) implement [`Default`](trait@Default).
 ///
 /// This is a workaround for the orphan rule, which prevents a blanket
 /// `impl<T: ConfigBuilder> Default for T`.
@@ -150,10 +150,39 @@ where
     }
 }
 
+/// A [`ZenohNetwork`](crate::ZenohNetwork) configuration options.
+///
+/// At least the zenoh config is needed, so no [`Default`](trait@Default)
+/// implementation is provided.
+///
+/// ```compile_fail
+/// let network_config = NetworkConfig {
+///     lifespan: Duration::from_secs(10),
+///     ..Default::default(), // this is not possible
+/// };
+/// ```
+///
+/// Instead, [`From<ZenohConfig>`](trait@From) is implemented for convenience.
+///
+/// ```no_run
+/// let zenoh_config: ZenohConfig;
+/// let network_config = NetworkConfig {
+///     lifespan: Duration::from_secs(10),
+///     ..zenoh_config.into(), // do this to complete with defaults
+/// };
+/// ```
 #[derive(Clone)]
 pub struct ZenohNetworkConfig {
+    /// The base topic to use as a namespace to work under.
     pub base_keyexpr: ConfigString,
+
+    /// The default lifespan of the nodes in the network.
+    ///
+    /// If no new messages or [heartbits](crate::heartbit) within this time from
+    /// the last one, the node is considered offline.
     pub lifespan: Duration,
+
+    /// The configuration to use for zenoh.
     pub zenoh: ZenohConfig,
 }
 
