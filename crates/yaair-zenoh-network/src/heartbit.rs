@@ -1,3 +1,8 @@
+//! Heartbit communication for [`ZenohNetwork`](crate::ZenohNetwork) nodes to
+//! notify their existance.
+//!
+//! This module is provided under the [`heartbit`](crate#features) feature.
+
 use std::{sync::Arc, time::Duration};
 
 use serde::{Deserialize, Serialize};
