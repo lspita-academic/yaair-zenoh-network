@@ -11,6 +11,63 @@
 //! You can find a full aggregate computing example using yaair
 //! [here](https://github.com/lspita-academic/yaair-zenoh-network/tree/main/examples/gradient)
 //!
+//! ```rust
+//! # use yaair_zenoh_network::{
+//! #     ZenohNetwork,
+//! #     id::ZenohNodeId,
+//! #     config::{
+//! #         ZenohNetworkConfig,
+//! #         ZenohConfig,
+//! #         ZenohConfigBuilder,
+//! #         ConfigBuilder,
+//! #         ConfigBuilderDefault,
+//! #         ZenohConfigBuilderInitOptions
+//! #     }
+//! # };
+//! # use yaair_serde::yaair_serde::json::JsonSerializer;
+//! # use yaair::yaair::aggregate::{VM, AggregateError};
+//! #
+//! // Create the zenoh config
+//! #[cfg(target_os = "espidf")]
+//! let zenoh_config_builder = {
+//!     // The zenoh pico implementation requires some options
+//!    let interface = "lo0";
+//!    ZenohConfigBuilder::new(ZenohConfigBuilderInitOptions {
+//!        interface: interface.into(),
+//!    })
+//!    .set_default_options()
+//! };
+//! #[cfg(not(target_os = "espidf"))]
+//! // With standard zenoh a default builder can be initialized
+//! let zenoh_config_builder = ZenohConfigBuilder::with_default_options();
+//!
+//! let zenoh_config = zenoh_config_builder.build().expect("Failed to build the zenoh config");
+//!
+//! // Create the network config
+//! let network_config = zenoh_config.into();
+//! // You can also override only specific options like this
+//! // let network_config = ZenohNetworkConfig {
+//! //      lifespan: Duration::from_secs(10),
+//! //      ..zenoh_config.into(),
+//! // };
+//!
+//! // Create the network
+//! // NOTE: The network and engine MUST use the same serializer
+//! let zenoh_network = ZenohNetwork::new(JsonSerializer, network_config).expect("Failed to create zenoh network");
+//!
+//! // You are now ready to use it in the engine!
+//! struct DummyEngineEnv;
+//!
+//! fn engine_program(
+//!     env: &DummyEngineEnv,
+//!     vm: &mut VM<ZenohNodeId, JsonSerializer>
+//! ) -> Result<(), AggregateError> {
+//!     Ok(())
+//! }
+//!
+//! let engine = Engine::new(zenoh_network, DummyEngineEnv, JsonSerializer, engine_program);
+//! ```
+//!
 //! # Features
 //!
 //! - `heartbit`: enables the ability to use keepalive messages to be able to
