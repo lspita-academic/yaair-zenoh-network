@@ -21,18 +21,6 @@ impl From<PeerType> for WhatAmI {
     }
 }
 
-// Multicast communication does not perform any negotiation upon group
-// joining.
-// Because of that, it is important that all transport parameters are the same
-// to make sure all your nodes in the system can communicate.
-//
-// <https://github.com/eclipse-zenoh/zenoh-pico/tree/1.9.0#34-basic-pubsub-example---p2p-over-udp-multicast>
-fn batch_multicast_size() -> usize {
-    zenoh_pico_build_defaults::batch_multicast_size_str()
-        .parse()
-        .expect("Should be a valid usize")
-}
-
 #[derive(Default)]
 pub struct ZenohConfigBuilderInitOptions;
 
@@ -56,9 +44,15 @@ impl ConfigBuilder for ZenohConfigBuilder {
         let builder = Self {
             options_map: Default::default(),
         };
+        // Multicast communication does not perform any negotiation upon group
+        // joining.
+        // Because of that, it is important that all transport parameters are the same
+        // to make sure all your nodes in the system can communicate.
+        //
+        // <https://github.com/eclipse-zenoh/zenoh-pico/tree/1.9.0#34-basic-pubsub-example---p2p-over-udp-multicast>
         builder.option_insert(
             "transport/link/tx/batch_size",
-            json!(batch_multicast_size()),
+            json!(zenoh_pico_build_defaults::batch_multicast_size()),
         )
     }
 

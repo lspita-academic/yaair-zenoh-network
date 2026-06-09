@@ -23,6 +23,8 @@ crate denoted by the `ESP_IDF_SYS_ROOT_CRATE` env variable (see: <https://github
 
 See the [gradient example](./examples/gradient/)
 
+# Known issues
+
 ## Peers don't seem to see each other
 
 The firewall could be blocking the messages. On Linux, you can try
@@ -34,4 +36,13 @@ sudo iptables -I INPUT -p udp --dport 7446 -j ACCEPT
 sudo iptables -I INPUT -p udp --dport 7447 -j ACCEPT
 sudo iptables -I INPUT -p tcp --dport 7446 -j ACCEPT
 sudo iptables -I INPUT -p tcp --dport 7447 -j ACCEPT
+```
+
+## Zenoh pico and Zenoh build options don't match
+
+[`esp-idf-sys` currently doesn't rebuild components automatically](https://github.com/esp-rs/esp-idf-sys/issues/316#issuecomment-2167590656), so you probably need to rebuild the package to read the new compile time env vars.
+
+```sh
+cargo clean -p esp-idf-sys
+cargo build -vv -p esp-idf-sys
 ```

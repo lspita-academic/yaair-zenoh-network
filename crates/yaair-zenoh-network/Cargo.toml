@@ -20,7 +20,7 @@ targets = [
 
 [[package.metadata.esp-idf-sys.extra_components]]
 component_dirs = ["../../lib/zenoh-pico"]
-bindings_header = "../../lib/zenoh-pico/zenoh-pico/include/zenoh-pico.h"
+bindings_header = "../../lib/zenoh-pico/bindings.h"
 bindings_module = "zenoh_pico"
 
 [dependencies]
