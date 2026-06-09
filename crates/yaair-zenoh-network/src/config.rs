@@ -31,6 +31,7 @@ pub use crate::zenoh_impl::config::ZenohConfigBuilderInitOptions;
 /// It allows to use both owned strings or static references.
 pub type ConfigString = Cow<'static, str>;
 
+/// An type of network protocol used by a [`Locator`].
 #[derive(Display, Default)]
 #[strum(serialize_all = "lowercase")]
 pub enum LocatorProtocol {
@@ -39,9 +40,14 @@ pub enum LocatorProtocol {
     UDP,
 }
 
+/// An endpoint in the zenoh network.
 pub struct Locator {
+    /// The network protocol to use.
     pub protocol: LocatorProtocol,
+    /// The socket address to connect to.
     pub address: SocketAddrV4,
+    /// The network interface to use for the connection. If not specified, the
+    /// default interface will be used.
     pub interface: Option<ConfigString>,
 }
 
