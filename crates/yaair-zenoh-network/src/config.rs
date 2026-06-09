@@ -71,6 +71,9 @@ impl Display for Locator {
     }
 }
 
+/// The type of peer a node can be in a zenoh network.
+///
+/// **NOT ALL ZENOH IMPLEMENTATIONS SUPPORT ALL PEER TYPES.**
 #[derive(Clone, Copy, Display, PartialEq, Eq, Hash)]
 #[strum(serialize_all = "lowercase")]
 pub enum PeerType {
@@ -79,22 +82,46 @@ pub enum PeerType {
     Router,
 }
 
+/// A builder to create a zenoh configuration.
 pub trait ConfigBuilder: Sized {
+    /// The error type possibly returned on [`build`](Self::build).
     type Err;
+    /// The configuration type produced by the builder.
     type Config;
+    /// The options used to initialize the builder.
     type InitOptions;
 
+    /// Initialize the builder with the given options.
     fn new(options: Self::InitOptions) -> Self;
+
+    /// Set the node id.
     fn id(self, id: ZenohNodeId) -> Self;
+
+    /// Set the node peer type.
     fn peer_type(self, peer_type: PeerType) -> Self;
+
+    /// Connect to the given locator.
     fn connect<L: Into<Locator>>(self, locator: L) -> Self;
+
+    /// Listen on the given locator.
     fn listen<L: Into<Locator>>(self, locator: L) -> Self;
+
+    /// Enable or disable multicast scouting.
     fn multicast_scouting(self, enable: bool) -> Self;
+
+    /// Set the multicast locator.
     fn multicast_locator<L: Into<Locator>>(self, locator: L) -> Self;
+
+    /// Set the scouting timeout.
     fn scouting_timeout(self, timeout: Duration) -> Self;
+
+    /// Set a filter on which [peer types](PeerType) to scout for.
     fn scouting_mask<PeerTypes: AsRef<[PeerType]>>(self, peer_types: PeerTypes) -> Self;
+
+    /// Build the configuration.
     fn build(self) -> Result<Self::Config, Self::Err>;
 
+    /// Set the default options for the configuration.
     fn set_default_options(self) -> Self {
         self.peer_type(PeerType::Peer)
             .multicast_scouting(true)
@@ -104,7 +131,13 @@ pub trait ConfigBuilder: Sized {
     }
 }
 
+/// Extension trait for [`ConfigBuilder`] types whose
+/// [`InitOptions`](ConfigBuilder::InitOptions) implement [`Default`].
+///
+/// This is a workaround for the orphan rule, which prevents a blanket
+/// `impl<T: ConfigBuilder> Default for T`.
 pub trait ConfigBuilderDefault {
+    /// Creates a new builder with default initialization and builder options.
     fn with_default_options() -> Self;
 }
 
