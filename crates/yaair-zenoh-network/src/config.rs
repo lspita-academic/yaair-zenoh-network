@@ -26,6 +26,9 @@ pub use crate::zenoh_impl::config::ZenohConfigBuilder;
 /// used.
 pub use crate::zenoh_impl::config::ZenohConfigBuilderInitOptions;
 
+/// A string value used in config structs.
+///
+/// It allows to use both owned strings or static references.
 pub type ConfigString = Cow<'static, str>;
 
 #[derive(Display, Default)]
