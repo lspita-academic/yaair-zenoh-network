@@ -33,6 +33,9 @@ strum.workspace = true
 thiserror.workspace = true
 yaair.workspace = true
 
+[dev-dependencies]
+yaair_serde.workspace = true
+
 [build-dependencies]
 embuild.workspace = true
 itertools.workspace = true
