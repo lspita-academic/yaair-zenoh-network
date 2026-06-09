@@ -1,0 +1,17 @@
+   Compiling esp-idf-sys v0.37.2
+   Compiling esp-idf-hal v0.46.2
+   Compiling esp-idf-svc v0.52.1
+   Compiling zenoh-pico-sys v0.1.0 (/home/lspita/UniBo/yaair-zenoh-network/crates/zenoh-pico-sys)
+   Compiling examples-common v0.1.0 (/home/lspita/UniBo/yaair-zenoh-network/examples/common)
+   Compiling gradient-example v0.1.0 (/home/lspita/UniBo/yaair-zenoh-network/examples/gradient)
+   Compiling ping-pong-example v0.1.0 (/home/lspita/UniBo/yaair-zenoh-network/examples/ping-pong)
+warning: zenoh-pico-sys@0.1.0: file path: "/home/lspita/UniBo/yaair-zenoh-network/target/riscv32imc-esp-espidf/debug/build/zenoh-pico-sys-5a104049a09039db/out/zenoh-pico/build/params/frag_max_size"
+warning: zenoh-pico-sys@0.1.0: values: ("4096", Some("4096"))
+warning: zenoh-pico-sys@0.1.0: file path: "/home/lspita/UniBo/yaair-zenoh-network/target/riscv32imc-esp-espidf/debug/build/zenoh-pico-sys-5a104049a09039db/out/zenoh-pico/build/params/batch_unicast_size"
+warning: zenoh-pico-sys@0.1.0: values: ("2048", Some("2048"))
+warning: zenoh-pico-sys@0.1.0: file path: "/home/lspita/UniBo/yaair-zenoh-network/target/riscv32imc-esp-espidf/debug/build/zenoh-pico-sys-5a104049a09039db/out/zenoh-pico/build/params/batch_multicast_size"
+warning: zenoh-pico-sys@0.1.0: values: ("2048", Some("2048"))
+warning: zenoh-pico-sys@0.1.0: changed_params: []
+   Compiling zenoh-pico v0.1.0 (/home/lspita/UniBo/yaair-zenoh-network/crates/zenoh-pico)
+   Compiling yaair-zenoh-network v0.1.0 (/home/lspita/UniBo/yaair-zenoh-network/crates/yaair-zenoh-network)
+    Finished `dev` profile [optimized + debuginfo] target(s) in 36.91s
