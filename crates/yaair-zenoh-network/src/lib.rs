@@ -160,11 +160,13 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
         });
 
         let base_keyexpr = KeyExpr::declare_topic(&config.base_keyexpr)?;
+        let node_id = session.node_id();
+        let node_keyexpr = base_keyexpr.declare_join(&node_id.to_string())?;
         let (messages_publisher, _messages_subscriber) =
-            Self::init_messages(&session, context.clone(), &base_keyexpr)?;
+            Self::init_messages(&session, context.clone(), &base_keyexpr, &node_keyexpr)?;
         #[cfg(feature = "heartbit")]
         let (heartbit_keyexpr, _heartbit_subscriber) =
-            Self::init_heartbit(&session, context.clone(), &base_keyexpr)?;
+            Self::init_heartbit(&session, context.clone(), &base_keyexpr, &node_keyexpr)?;
 
         Ok(Self {
             session,
@@ -182,16 +184,14 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
         session: &Session,
         context: Arc<NetworkContext<Ser>>,
         base_keyexpr: &KeyExpr,
+        node_keyexpr: &KeyExpr,
     ) -> Result<(Publisher, Subscriber), ZenohError> {
-        let node_id = session.node_id();
-        let messages_keyexpr = base_keyexpr.declare_join("messages")?;
-        let messages_publisher = Publisher::try_declare(
-            session,
-            messages_keyexpr.declare_join(&node_id.to_string())?,
-        )?;
+        let messages_subtopic = "messages";
+        let messages_publisher =
+            Publisher::try_declare(session, node_keyexpr.declare_join(messages_subtopic)?)?;
         let messages_subscriber = Subscriber::try_declare_background(
             &session,
-            messages_keyexpr.star()?,
+            base_keyexpr.star()?.declare_join(messages_subtopic)?,
             MessageSubscriberOptions {
                 context,
                 callback: Self::on_outbound_message,
@@ -205,11 +205,13 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
         session: &Session,
         context: Arc<NetworkContext<Ser>>,
         base_keyexpr: &KeyExpr,
+        node_keyexpr: &KeyExpr,
     ) -> Result<(KeyExpr, Subscriber), ZenohError> {
-        let heartbit_keyexpr = base_keyexpr.declare_join("heartbit")?;
+        let heartbit_subtopic = "heartbit";
+        let heartbit_keyexpr = node_keyexpr.declare_join(heartbit_subtopic)?;
         let subscriber = Subscriber::try_declare_background(
             &session,
-            heartbit_keyexpr.star()?,
+            base_keyexpr.star()?.declare_join(heartbit_subtopic)?,
             MessageSubscriberOptions {
                 context,
                 callback: Self::on_heartbit,
