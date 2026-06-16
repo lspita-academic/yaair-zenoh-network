@@ -112,8 +112,8 @@ use crate::heartbit::{Heartbit, HeartbitPublisher};
 pub use crate::zenoh_impl::ZenohError;
 use crate::{
     comm::{
-        CommunicationLayer, MessagePublisher, MessageSubscriber, MessageSubscriberOptions,
-        TopicKeyExpr,
+        ZenohSession, ZenohPublisher, ZenohSubscriber, ZenohSubscriberOptions,
+        ZenohKeyExpr,
     },
     config::ZenohNetworkConfig,
     id::ZenohNodeId,
@@ -192,7 +192,7 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
         let messages_subscriber = Subscriber::try_declare_background(
             &session,
             base_keyexpr.star()?.declare_join(messages_subtopic)?,
-            MessageSubscriberOptions {
+            ZenohSubscriberOptions {
                 context,
                 callback: Self::on_outbound_message,
             },
@@ -212,7 +212,7 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
         let subscriber = Subscriber::try_declare_background(
             &session,
             base_keyexpr.star()?.declare_join(heartbit_subtopic)?,
-            MessageSubscriberOptions {
+            ZenohSubscriberOptions {
                 context,
                 callback: Self::on_heartbit,
             },

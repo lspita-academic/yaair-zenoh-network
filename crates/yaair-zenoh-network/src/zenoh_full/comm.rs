@@ -3,22 +3,19 @@ use yaair::yaair::messages::serializer::Serializer;
 use zenoh::{
     Error, Wait,
     config::ZenohId,
-    pubsub::{Publisher as ZenohPublisher, Subscriber as ZenohSubscriber},
+    pubsub::{Publisher as _Publisher, Subscriber as _Subscriber},
     sample::Sample,
 };
 pub use zenoh::{Session, key_expr::OwnedKeyExpr as KeyExpr};
 
 use crate::{
     ZenohNodeId,
-    comm::{
-        CommunicationLayer, MessagePublisher, MessageSubscriber, MessageSubscriberOptions,
-        TopicKeyExpr,
-    },
+    comm::{ZenohKeyExpr, ZenohPublisher, ZenohSession, ZenohSubscriber, ZenohSubscriberOptions},
     config::ZenohConfig,
 };
 
-pub type Publisher = ZenohPublisher<'static>;
-pub type Subscriber = ZenohSubscriber<()>;
+pub type Publisher = _Publisher<'static>;
+pub type Subscriber = _Subscriber<()>;
 
 impl From<ZenohId> for ZenohNodeId {
     fn from(value: ZenohId) -> Self {
@@ -26,7 +23,7 @@ impl From<ZenohId> for ZenohNodeId {
     }
 }
 
-impl CommunicationLayer for Session {
+impl ZenohSession for Session {
     type Err = Error;
     type Config = ZenohConfig;
     type KeyExpr = KeyExpr;
@@ -40,19 +37,19 @@ impl CommunicationLayer for Session {
     }
 }
 
-impl TopicKeyExpr<Session> for KeyExpr {
-    fn declare_topic(topic: &str) -> Result<Self, <Session as CommunicationLayer>::Err> {
+impl ZenohKeyExpr<Session> for KeyExpr {
+    fn declare_topic(topic: &str) -> Result<Self, <Session as ZenohSession>::Err> {
         topic.parse()
     }
 
-    fn join_topics(&self, other: &Self) -> Result<Self, <Session as CommunicationLayer>::Err> {
+    fn join_topics(&self, other: &Self) -> Result<Self, <Session as ZenohSession>::Err> {
         self.join(other)
     }
 }
 
 fn on_message<T: for<'de> Deserialize<'de>, Ser: Serializer + Sync + Send>(
     sample: Sample,
-    options: &MessageSubscriberOptions<T, Ser>,
+    options: &ZenohSubscriberOptions<T, Ser>,
 ) {
     log::info!("Received message");
 
@@ -68,15 +65,15 @@ fn on_message<T: for<'de> Deserialize<'de>, Ser: Serializer + Sync + Send>(
     (options.callback)(message, &options.context);
 }
 
-impl MessageSubscriber<Session> for Subscriber {
+impl ZenohSubscriber<Session> for Subscriber {
     fn try_declare_background<
         T: for<'de> Deserialize<'de> + 'static,
         Ser: Serializer + Sync + Send + 'static,
     >(
         session: &Session,
-        keyexpr: <Session as CommunicationLayer>::KeyExpr,
-        options: MessageSubscriberOptions<T, Ser>,
-    ) -> Result<Self, <Session as CommunicationLayer>::Err> {
+        keyexpr: <Session as ZenohSession>::KeyExpr,
+        options: ZenohSubscriberOptions<T, Ser>,
+    ) -> Result<Self, <Session as ZenohSession>::Err> {
         session
             .declare_subscriber(keyexpr)
             .callback(move |sample| self::on_message(sample, &options))
@@ -84,18 +81,18 @@ impl MessageSubscriber<Session> for Subscriber {
     }
 }
 
-impl MessagePublisher<Session> for Publisher {
+impl ZenohPublisher<Session> for Publisher {
     fn try_declare(
         session: &Session,
-        keyexpr: <Session as CommunicationLayer>::KeyExpr,
-    ) -> Result<Self, <Session as CommunicationLayer>::Err> {
+        keyexpr: <Session as ZenohSession>::KeyExpr,
+    ) -> Result<Self, <Session as ZenohSession>::Err> {
         session.declare_publisher(keyexpr).wait()
     }
 
     fn put_message<M: AsRef<[u8]>>(
         &self,
         message: M,
-    ) -> Result<(), <Session as CommunicationLayer>::Err> {
+    ) -> Result<(), <Session as ZenohSession>::Err> {
         self.put(message.as_ref()).wait()
     }
 }
