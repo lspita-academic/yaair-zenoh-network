@@ -10,7 +10,7 @@ use yaair::yaair::messages::serializer::Serializer;
 
 use crate::{
     NetworkContext, ZenohNodeId,
-    comm::{ZenohSession, ZenohPublisher},
+    comm::{ZenohPublisher, ZenohSession},
     zenoh_impl::comm::{KeyExpr, Publisher, Session},
 };
 
@@ -37,7 +37,7 @@ impl<'a, Ser: Serializer + Sync + Send> HeartbitPublisher<Ser> {
         network_context: Arc<NetworkContext<Ser>>,
     ) -> Result<Self, <Session as ZenohSession>::Err> {
         let node_id = session.node_id();
-        let publisher = Publisher::try_declare(session, keyexpr)?;
+        let publisher = <Session as ZenohSession>::declare_publisher(session, keyexpr)?;
         Ok(Self {
             node_id,
             network_context,

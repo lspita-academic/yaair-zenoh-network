@@ -59,7 +59,7 @@ impl<T> StoreEntity<T> {
 type Map<K, T> = HashMap<K, T>;
 type Storage<Id, T> = Map<Id, StoreEntity<T>>;
 
-pub struct AtomicMessagesStore<Id, T> {
+pub struct MessagesStore<Id, T> {
     default_lifespan: Duration,
     storage: Mutex<Storage<Id, T>>,
 }
@@ -68,7 +68,7 @@ pub struct AtomicMessagesStore<Id, T> {
 #[error("poisoned lock")]
 pub struct PoisonedLockError;
 
-impl<Id: Eq + Hash + Clone, T> AtomicMessagesStore<Id, T> {
+impl<Id: Eq + Hash + Clone, T> MessagesStore<Id, T> {
     pub fn new(default_lifespan: Duration) -> Self {
         Self {
             default_lifespan,
@@ -140,8 +140,8 @@ impl<Id: Eq + Hash + Clone, T> AtomicMessagesStore<Id, T> {
     }
 }
 
-impl<Id: Eq + Hash + Clone, T: Clone> AtomicMessagesStore<Id, T> {
-    pub fn messages_snapshot(&self) -> Result<Map<Id, T>, PoisonedLockError> {
+impl<Id: Eq + Hash + Clone, T: Clone> MessagesStore<Id, T> {
+    pub fn create_snapshot(&self) -> Result<Map<Id, T>, PoisonedLockError> {
         let storage = self.acquire_storage()?;
         Ok(storage
             .iter()

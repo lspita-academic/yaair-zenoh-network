@@ -27,6 +27,8 @@ impl ZenohSession for Session {
     type Err = Error;
     type Config = ZenohConfig;
     type KeyExpr = KeyExpr;
+    type Subscriber = Subscriber;
+    type Publisher = Publisher;
 
     fn init(zenoh_config: Self::Config) -> Result<Self, Self::Err> {
         zenoh::open(zenoh_config).wait()
@@ -34,6 +36,23 @@ impl ZenohSession for Session {
 
     fn node_id(&self) -> ZenohNodeId {
         self.zid().into()
+    }
+
+    fn declare_subscriber<
+        T: for<'de> Deserialize<'de> + 'static,
+        Ser: Serializer + Sync + Send + 'static,
+    >(
+        &self,
+        keyexpr: Self::KeyExpr,
+        options: ZenohSubscriberOptions<T, Ser>,
+    ) -> Result<Self::Subscriber, Self::Err> {
+        self.declare_subscriber(keyexpr)
+            .callback(move |sample| self::on_message(sample, &options))
+            .wait()
+    }
+
+    fn declare_publisher(&self, keyexpr: Self::KeyExpr) -> Result<Self::Publisher, Self::Err> {
+        self.declare_publisher(keyexpr).wait()
     }
 }
 
@@ -65,30 +84,9 @@ fn on_message<T: for<'de> Deserialize<'de>, Ser: Serializer + Sync + Send>(
     (options.callback)(message, &options.context);
 }
 
-impl ZenohSubscriber<Session> for Subscriber {
-    fn try_declare_background<
-        T: for<'de> Deserialize<'de> + 'static,
-        Ser: Serializer + Sync + Send + 'static,
-    >(
-        session: &Session,
-        keyexpr: <Session as ZenohSession>::KeyExpr,
-        options: ZenohSubscriberOptions<T, Ser>,
-    ) -> Result<Self, <Session as ZenohSession>::Err> {
-        session
-            .declare_subscriber(keyexpr)
-            .callback(move |sample| self::on_message(sample, &options))
-            .wait()
-    }
-}
+impl ZenohSubscriber<Session> for Subscriber {}
 
 impl ZenohPublisher<Session> for Publisher {
-    fn try_declare(
-        session: &Session,
-        keyexpr: <Session as ZenohSession>::KeyExpr,
-    ) -> Result<Self, <Session as ZenohSession>::Err> {
-        session.declare_publisher(keyexpr).wait()
-    }
-
     fn put_message<M: AsRef<[u8]>>(
         &self,
         message: M,

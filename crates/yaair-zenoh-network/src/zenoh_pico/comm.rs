@@ -19,10 +19,7 @@ pub use zenoh_pico::{
 
 use crate::{
     ZenohNodeId,
-    comm::{
-        ZenohSession, ZenohPublisher, ZenohSubscriber, ZenohSubscriberOptions,
-        ZenohKeyExpr,
-    },
+    comm::{ZenohKeyExpr, ZenohPublisher, ZenohSession, ZenohSubscriber, ZenohSubscriberOptions},
     id::IntoZenohNodeId,
 };
 
@@ -30,6 +27,8 @@ impl ZenohSession for Session {
     type Err = ZenohError;
     type Config = Config;
     type KeyExpr = KeyExpr;
+    type Subscriber = Subscriber;
+    type Publisher = Publisher;
 
     fn init(zenoh_config: Self::Config) -> Result<Self, Self::Err> {
         Self::open(zenoh_config, None)
@@ -37,6 +36,25 @@ impl ZenohSession for Session {
 
     fn node_id(&self) -> ZenohNodeId {
         self.zid().into_node_id()
+    }
+
+    fn declare_subscriber<
+        T: for<'de> Deserialize<'de> + 'static,
+        Ser: Serializer + Sync + Send + 'static,
+    >(
+        &self,
+        keyexpr: Self::KeyExpr,
+        options: ZenohSubscriberOptions<T, Ser>,
+    ) -> Result<Self::Subscriber, Self::Err> {
+        self.declare_subscriber(
+            &keyexpr,
+            SampleClosure::from_callback(self::on_message::<T, Ser>, Some(Arc::new(options)))?,
+            None,
+        )
+    }
+
+    fn declare_publisher(&self, keyexpr: Self::KeyExpr) -> Result<Self::Publisher, Self::Err> {
+        self.declare_publisher(&keyexpr, None)
     }
 }
 
@@ -70,31 +88,9 @@ unsafe extern "C" fn on_message<T: for<'de> Deserialize<'de>, Ser: Serializer + 
     (options.callback)(message, &options.context);
 }
 
-impl ZenohSubscriber<Session> for Subscriber {
-    fn try_declare_background<
-        T: for<'de> Deserialize<'de> + 'static,
-        Ser: Serializer + Sync + Send + 'static,
-    >(
-        session: &Session,
-        keyexpr: <Session as ZenohSession>::KeyExpr,
-        options: ZenohSubscriberOptions<T, Ser>,
-    ) -> Result<Self, <Session as ZenohSession>::Err> {
-        session.declare_subscriber(
-            &keyexpr,
-            SampleClosure::from_callback(self::on_message::<T, Ser>, Some(Arc::new(options)))?,
-            None,
-        )
-    }
-}
+impl ZenohSubscriber<Session> for Subscriber {}
 
 impl ZenohPublisher<Session> for Publisher {
-    fn try_declare(
-        session: &Session,
-        keyexpr: <Session as ZenohSession>::KeyExpr,
-    ) -> Result<Self, <Session as ZenohSession>::Err> {
-        session.declare_publisher(&keyexpr, None)
-    }
-
     fn put_message<M: AsRef<[u8]>>(
         &self,
         message: M,

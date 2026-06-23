@@ -111,18 +111,15 @@ use yaair::yaair::{
 use crate::heartbit::{Heartbit, HeartbitPublisher};
 pub use crate::zenoh_impl::ZenohError;
 use crate::{
-    comm::{
-        ZenohSession, ZenohPublisher, ZenohSubscriber, ZenohSubscriberOptions,
-        ZenohKeyExpr,
-    },
+    comm::{ZenohKeyExpr, ZenohPublisher, ZenohSession, ZenohSubscriberOptions},
     config::ZenohNetworkConfig,
     id::ZenohNodeId,
-    messages::store::AtomicMessagesStore,
+    messages::store::MessagesStore,
     zenoh_impl::comm::{KeyExpr, Publisher, Session, Subscriber},
 };
 
 pub(crate) struct NetworkContext<Ser: Sync + Send> {
-    messages: AtomicMessagesStore<ZenohNodeId, ValueTree>,
+    messages: MessagesStore<ZenohNodeId, ValueTree>,
     serializer: Ser,
     node_id: ZenohNodeId,
 }
@@ -154,7 +151,7 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
     pub fn new(serializer: Ser, config: ZenohNetworkConfig) -> Result<Self, ZenohError> {
         let session = Session::init(config.zenoh)?;
         let context = Arc::new(NetworkContext {
-            messages: AtomicMessagesStore::new(config.lifespan),
+            messages: MessagesStore::new(config.lifespan),
             serializer,
             node_id: session.node_id(),
         });
@@ -187,9 +184,11 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
         node_keyexpr: &KeyExpr,
     ) -> Result<(Publisher, Subscriber), ZenohError> {
         let messages_subtopic = "messages";
-        let messages_publisher =
-            Publisher::try_declare(session, node_keyexpr.declare_join(messages_subtopic)?)?;
-        let messages_subscriber = Subscriber::try_declare_background(
+        let messages_publisher = <Session as ZenohSession>::declare_publisher(
+            session,
+            node_keyexpr.declare_join(messages_subtopic)?,
+        )?;
+        let messages_subscriber = <Session as ZenohSession>::declare_subscriber(
             &session,
             base_keyexpr.star()?.declare_join(messages_subtopic)?,
             ZenohSubscriberOptions {
@@ -209,7 +208,7 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
     ) -> Result<(KeyExpr, Subscriber), ZenohError> {
         let heartbit_subtopic = "heartbit";
         let heartbit_keyexpr = node_keyexpr.declare_join(heartbit_subtopic)?;
-        let subscriber = Subscriber::try_declare_background(
+        let subscriber = <Session as ZenohSession>::declare_subscriber(
             &session,
             base_keyexpr.star()?.declare_join(heartbit_subtopic)?,
             ZenohSubscriberOptions {
@@ -307,7 +306,7 @@ impl<Ser: Serializer + Sync + Send> Network<ZenohNodeId> for ZenohNetwork<Ser> {
                 let expired_str = expired.into_iter().map(|e| e.to_string()).join(", ");
                 log::warn!("Expired nodes: {expired_str}");
             }
-            messages.messages_snapshot()
+            messages.create_snapshot()
         }) {
             Ok(s) => {
                 log::debug!("Snapshot created successfully");
