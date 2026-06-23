@@ -88,11 +88,11 @@ pub mod heartbit;
 pub mod id;
 pub(crate) mod messages;
 
-#[cfg(zenoh_impl = "zenoh_full")]
-#[path = "zenoh_full/mod.rs"]
+#[cfg(zenoh_impl = "standard")]
+#[path = "zenoh_standard/mod.rs"]
 mod zenoh_impl;
 
-#[cfg(zenoh_impl = "zenoh_pico")]
+#[cfg(zenoh_impl = "pico")]
 #[path = "zenoh_pico/mod.rs"]
 mod zenoh_impl;
 

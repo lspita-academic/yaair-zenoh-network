@@ -25,12 +25,12 @@ impl ZenohNodeId {
 }
 
 // custom from/into traits are needed to avoid potential conflicts errors
-#[cfg_attr(zenoh_impl = "zenoh_full", allow(dead_code))]
+#[cfg_attr(zenoh_impl = "standard", allow(dead_code))]
 pub(crate) trait FromZenohNodeId {
     fn from_node_id(node_id: ZenohNodeId) -> Self;
 }
 
-#[cfg_attr(zenoh_impl = "zenoh_full", allow(dead_code))]
+#[cfg_attr(zenoh_impl = "standard", allow(dead_code))]
 pub(crate) trait IntoZenohNodeId {
     fn into_node_id(self) -> ZenohNodeId;
 }
