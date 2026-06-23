@@ -1,5 +1,5 @@
-#[cfg(feature = "heartbit")]
-mod heartbit;
+#[cfg(feature = "heartbeat")]
+mod heartbeat;
 
 use std::{array, cmp::Ordering, collections::HashMap, time::Duration};
 
@@ -46,8 +46,8 @@ impl Node {
         *self == Self::Node1
     }
 
-    #[cfg(feature = "heartbit")]
-    fn heartbit_lifespan(&self) -> Option<Duration> {
+    #[cfg(feature = "heartbeat")]
+    fn heartbeat_lifespan(&self) -> Option<Duration> {
         match self {
             Self::Node3 => Some(Duration::from_secs(3)),
             _ => None,
@@ -107,7 +107,7 @@ async fn gradient_task(node: Node, network: ZenohNetwork<Serializer>) {
 
 pub async fn gradient_main(node: Node, spawner: Spawner) {
     examples_common::init();
-    log::warn!("Heartbit feature: {}", cfg!(feature = "heartbit"));
+    log::warn!("Heartbeat feature: {}", cfg!(feature = "heartbeat"));
 
     #[cfg(target_os = "espidf")]
     let zenoh_config_builder = {
@@ -138,19 +138,19 @@ pub async fn gradient_main(node: Node, spawner: Spawner) {
         ZenohNetwork::new(Serializer {}, network_config).expect("Failed to create zenoh network");
     log::info!("Network id: {}", network.get_local_id());
 
-    #[cfg(feature = "heartbit")]
+    #[cfg(feature = "heartbeat")]
     {
-        let heartbit_publisher = network
-            .declare_heartbit_publisher()
-            .expect("Failed to declare heartbit publisher");
+        let heartbeat_publisher = network
+            .declare_heartbeat_publisher()
+            .expect("Failed to declare heartbeat publisher");
 
         spawner.spawn(
-            heartbit::periodic_heartbit_task(
-                heartbit_publisher,
+            heartbeat::periodic_heartbeat_task(
+                heartbeat_publisher,
                 EmbassyDuration::from_secs(10),
-                node.heartbit_lifespan(),
+                node.heartbeat_lifespan(),
             )
-            .expect("Failed to create heartbit task"),
+            .expect("Failed to create heartbeat task"),
         );
     }
     spawner.spawn(gradient_task(node, network).expect("Failed to create gradient task"));

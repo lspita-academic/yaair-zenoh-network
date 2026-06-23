@@ -36,5 +36,5 @@ embassy-time.workspace = true
 esp-idf-svc.workspace = true
 
 [features]
-default = ["heartbit"]
-heartbit = ["yaair-zenoh-network/heartbit"]
+default = ["heartbeat"]
+heartbeat = ["yaair-zenoh-network/heartbeat"]

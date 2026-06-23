@@ -179,7 +179,7 @@ pub struct ZenohNetworkConfig {
 
     /// The default lifespan of the nodes in the network.
     ///
-    /// If no new messages or [heartbits](crate::heartbit) within this time from
+    /// If no new messages or [heartbeats](crate::heartbeat) within this time from
     /// the last one, the node is considered offline.
     pub lifespan: Duration,
 

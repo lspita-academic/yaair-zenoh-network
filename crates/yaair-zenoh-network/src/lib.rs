@@ -78,13 +78,13 @@
 //!
 //! # Features
 //!
-//! - `heartbit`: enables the ability to use keepalive messages to be able to
-//!   notify other peers of the node existance. See the [`heartbit`] module.
+//! - `heartbeat`: enables the ability to use keepalive messages to be able to
+//!   notify other peers of the node existance. See the [`heartbeat`] module.
 
 pub(crate) mod comm;
 pub mod config;
-#[cfg(feature = "heartbit")]
-pub mod heartbit;
+#[cfg(feature = "heartbeat")]
+pub mod heartbeat;
 pub mod id;
 pub(crate) mod messages;
 
@@ -107,8 +107,8 @@ use yaair::yaair::{
     network::Network,
 };
 
-#[cfg(feature = "heartbit")]
-use crate::heartbit::{Heartbit, HeartbitPublisher};
+#[cfg(feature = "heartbeat")]
+use crate::heartbeat::{Heartbeat, HeartbeatPublisher};
 pub use crate::zenoh_impl::ZenohError;
 use crate::{
     comm::{ZenohKeyExpr, ZenohPublisher, ZenohSession, ZenohSubscriberOptions},
@@ -130,19 +130,19 @@ pub(crate) struct NetworkContext<Ser: Sync + Send> {
 /// keyexpr](ZenohNetworkConfig::base_keyexpr) namespace to prevent conflicts
 /// with other topics.
 ///
-/// If the [`heartbit`](crate#features) feature is enabled, it also listens for
-/// heartbit messages and provides the ability to declare an
-/// [`HeartbitPublisher`] to notify the other peers.
+/// If the [`heartbeat`](crate#features) feature is enabled, it also listens for
+/// heartbeat messages and provides the ability to declare an
+/// [`HeartbeatPublisher`] to notify the other peers.
 pub struct ZenohNetwork<Ser: Sync + Send> {
     session: Session,
     context: Arc<NetworkContext<Ser>>,
     messages_publisher: Publisher,
-    #[cfg(feature = "heartbit")]
-    heartbit_keyexpr: KeyExpr,
+    #[cfg(feature = "heartbeat")]
+    heartbeat_keyexpr: KeyExpr,
     // store subscribers to keep them alive
     _messages_subscriber: Subscriber,
-    #[cfg(feature = "heartbit")]
-    _heartbit_subscriber: Subscriber,
+    #[cfg(feature = "heartbeat")]
+    _heartbeat_subscriber: Subscriber,
 }
 
 impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
@@ -161,19 +161,19 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
         let node_keyexpr = base_keyexpr.declare_join(&node_id.to_string())?;
         let (messages_publisher, _messages_subscriber) =
             Self::init_messages(&session, context.clone(), &base_keyexpr, &node_keyexpr)?;
-        #[cfg(feature = "heartbit")]
-        let (heartbit_keyexpr, _heartbit_subscriber) =
-            Self::init_heartbit(&session, context.clone(), &base_keyexpr, &node_keyexpr)?;
+        #[cfg(feature = "heartbeat")]
+        let (heartbeat_keyexpr, _heartbeat_subscriber) =
+            Self::init_heartbeat(&session, context.clone(), &base_keyexpr, &node_keyexpr)?;
 
         Ok(Self {
             session,
             context,
             messages_publisher,
-            #[cfg(feature = "heartbit")]
-            heartbit_keyexpr,
+            #[cfg(feature = "heartbeat")]
+            heartbeat_keyexpr,
             _messages_subscriber,
-            #[cfg(feature = "heartbit")]
-            _heartbit_subscriber,
+            #[cfg(feature = "heartbeat")]
+            _heartbeat_subscriber,
         })
     }
 
@@ -199,24 +199,24 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
         Ok((messages_publisher, messages_subscriber))
     }
 
-    #[cfg(feature = "heartbit")]
-    fn init_heartbit(
+    #[cfg(feature = "heartbeat")]
+    fn init_heartbeat(
         session: &Session,
         context: Arc<NetworkContext<Ser>>,
         base_keyexpr: &KeyExpr,
         node_keyexpr: &KeyExpr,
     ) -> Result<(KeyExpr, Subscriber), ZenohError> {
-        let heartbit_subtopic = "heartbit";
-        let heartbit_keyexpr = node_keyexpr.declare_join(heartbit_subtopic)?;
+        let heartbeat_subtopic = "heartbeat";
+        let heartbeat_keyexpr = node_keyexpr.declare_join(heartbeat_subtopic)?;
         let subscriber = <Session as ZenohSession>::declare_subscriber(
             &session,
-            base_keyexpr.star()?.declare_join(heartbit_subtopic)?,
+            base_keyexpr.star()?.declare_join(heartbeat_subtopic)?,
             ZenohSubscriberOptions {
                 context,
-                callback: Self::on_heartbit,
+                callback: Self::on_heartbeat,
             },
         )?;
-        Ok((heartbit_keyexpr, subscriber))
+        Ok((heartbeat_keyexpr, subscriber))
     }
 
     fn log_store_result<T>(id: ZenohNodeId) -> impl FnOnce(Option<T>) {
@@ -247,16 +247,16 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
         }
     }
 
-    #[cfg(feature = "heartbit")]
-    fn on_heartbit(heartbit: Heartbit, context: &NetworkContext<Ser>) {
-        let sender = heartbit.sender;
+    #[cfg(feature = "heartbeat")]
+    fn on_heartbeat(heartbeat: Heartbeat, context: &NetworkContext<Ser>) {
+        let sender = heartbeat.sender;
         if sender == context.node_id {
             return;
         }
 
-        log::info!("Heartbit message from: {}", sender);
+        log::info!("Heartbeat message from: {}", sender);
 
-        let store_result = if let Some(lifespan) = heartbit.lifespan {
+        let store_result = if let Some(lifespan) = heartbeat.lifespan {
             log::info!("Storing updated lifespan [ms]: {}", lifespan.as_millis());
             context
                 .messages
@@ -269,18 +269,18 @@ impl<Ser: Serializer + Sync + Send + 'static> ZenohNetwork<Ser> {
                 .map(Self::log_store_result(sender))
         };
         match store_result {
-            Ok(_) => log::info!("Heartbit stored successfully"),
-            Err(e) => log::warn!("Failed to store heartbit: {e}"),
+            Ok(_) => log::info!("Heartbeat stored successfully"),
+            Err(e) => log::warn!("Failed to store heartbeat: {e}"),
         }
     }
 
-    /// Declares an [`HeartbitPublisher`] to notify the other peers of the node
+    /// Declares an [`HeartbeatPublisher`] to notify the other peers of the node
     /// existance.
-    #[cfg(feature = "heartbit")]
-    pub fn declare_heartbit_publisher(&self) -> Result<HeartbitPublisher<Ser>, ZenohError> {
+    #[cfg(feature = "heartbeat")]
+    pub fn declare_heartbeat_publisher(&self) -> Result<HeartbeatPublisher<Ser>, ZenohError> {
         let node_id = self.get_local_id();
-        let keyexpr = self.heartbit_keyexpr.declare_join(&node_id.to_string())?;
-        HeartbitPublisher::try_declare(&self.session, keyexpr, self.context.clone())
+        let keyexpr = self.heartbeat_keyexpr.declare_join(&node_id.to_string())?;
+        HeartbeatPublisher::try_declare(&self.session, keyexpr, self.context.clone())
     }
 }
 

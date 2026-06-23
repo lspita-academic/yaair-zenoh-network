@@ -1,7 +1,7 @@
-//! Heartbit communication for [`ZenohNetwork`](crate::ZenohNetwork) nodes to
+//! Heartbeat communication for [`ZenohNetwork`](crate::ZenohNetwork) nodes to
 //! notify their existance.
 //!
-//! This module is provided under the [`heartbit`](crate#features) feature.
+//! This module is provided under the [`heartbeat`](crate#features) feature.
 
 use std::{sync::Arc, time::Duration};
 
@@ -15,22 +15,22 @@ use crate::{
 };
 
 #[derive(Serialize, Deserialize)]
-pub(crate) struct Heartbit {
+pub(crate) struct Heartbeat {
     pub sender: ZenohNodeId,
     pub lifespan: Option<Duration>,
 }
 
-/// A publisher for heartbit messages.
+/// A publisher for heartbeat messages.
 ///
 /// It can be created by [declaring it from a
-/// `ZenohNetwork`](crate::ZenohNetwork::declare_heartbit_publisher).
-pub struct HeartbitPublisher<Ser: Serializer + Sync + Send> {
+/// `ZenohNetwork`](crate::ZenohNetwork::declare_heartbeat_publisher).
+pub struct HeartbeatPublisher<Ser: Serializer + Sync + Send> {
     node_id: ZenohNodeId,
     network_context: Arc<NetworkContext<Ser>>,
     publisher: Publisher,
 }
 
-impl<'a, Ser: Serializer + Sync + Send> HeartbitPublisher<Ser> {
+impl<'a, Ser: Serializer + Sync + Send> HeartbeatPublisher<Ser> {
     pub(crate) fn try_declare(
         session: &Session,
         keyexpr: KeyExpr,
@@ -51,7 +51,7 @@ impl<'a, Ser: Serializer + Sync + Send> HeartbitPublisher<Ser> {
     /// timestamp of the last message to reset the countdown for considering the
     /// node offline.
     pub fn put_keep_alive(&self) {
-        self.put_heartbit(self.heartbit(None));
+        self.put_heartbeat(self.heartbeat(None));
     }
 
     /// Publish a new lifespan to use for the node.
@@ -60,28 +60,28 @@ impl<'a, Ser: Serializer + Sync + Send> HeartbitPublisher<Ser> {
     /// for a different lifespan than [the default of the
     /// network](crate::config::ZenohNetworkConfig::lifespan).
     pub fn put_lifespan(&self, lifespan: Duration) {
-        self.put_heartbit(self.heartbit(Some(lifespan)));
+        self.put_heartbeat(self.heartbeat(Some(lifespan)));
     }
 
-    fn heartbit(&self, lifespan: Option<Duration>) -> Heartbit {
-        Heartbit {
+    fn heartbeat(&self, lifespan: Option<Duration>) -> Heartbeat {
+        Heartbeat {
             sender: self.node_id,
             lifespan,
         }
     }
 
-    fn put_heartbit(&self, heartbit: Heartbit) {
-        log::info!("Preparing heartbit message");
-        let heartbit_bytes = match self.network_context.serializer.serialize(&heartbit) {
+    fn put_heartbeat(&self, heartbeat: Heartbeat) {
+        log::info!("Preparing heartbeat message");
+        let heartbeat_bytes = match self.network_context.serializer.serialize(&heartbeat) {
             Ok(v) => v,
             Err(e) => {
-                log::warn!("Failed to serialize heartbit: {e}");
+                log::warn!("Failed to serialize heartbeat: {e}");
                 return;
             }
         };
-        match self.publisher.put_message(heartbit_bytes) {
-            Ok(_) => log::info!("Heartbit published successfully"),
-            Err(e) => log::info!("Error publishing heartbit: {e}"),
+        match self.publisher.put_message(heartbeat_bytes) {
+            Ok(_) => log::info!("Heartbeat published successfully"),
+            Err(e) => log::info!("Error publishing heartbeat: {e}"),
         }
     }
 }
