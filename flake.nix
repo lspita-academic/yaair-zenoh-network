@@ -24,6 +24,7 @@
           inherit system;
           overlays = [ rust-overlay.overlays.default ];
         };
+        rpi-pkgs = pkgs.pkgsCross.raspberryPi;
         rust-toolchain = pkgs.rust-bin.fromRustupToolchainFile ./rust-toolchain.toml;
         # esp-clang ships as a pre-built binary linked against libxml2.so.2
         # (the old v2.x soname). Nix's current libxml2 uses libxml2.so.16.
@@ -56,6 +57,8 @@
               espflash
               python313 # there is a warning in the logs about 3.14
               ldproxy
+              # rpi zero
+              rpi-pkgs.stdenv.cc
             ];
 
             env = {

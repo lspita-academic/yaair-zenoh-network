@@ -42,14 +42,10 @@ impl Node {
         array::repeat(value).into()
     }
 
-    fn is_source(&self) -> bool {
-        *self == Self::Node1
-    }
-
     #[cfg(feature = "heartbeat")]
     fn heartbeat_lifespan(&self) -> Option<Duration> {
         match self {
-            Self::Node3 => Some(Duration::from_secs(3)),
+            Self::Node2 => Some(Duration::from_secs(3)),
             _ => None,
         }
     }
@@ -57,10 +53,13 @@ impl Node {
 
 struct GradientEnv {
     node: Node,
-    is_source: bool,
 }
 
 impl GradientEnv {
+    fn is_source(&self) -> bool {
+        self.node == Node::Node1
+    }
+
     fn distances(&self) -> Field<ZenohNodeId, f32> {
         match self.node {
             Node::Node1 => Field::new(0.0, HashMap::from([(Node::Node2.node_id(), 1.0)])),
@@ -82,7 +81,7 @@ fn gradient(
         let distances = field.aligned_map(&env.distances(), |a, b| a + b);
         let min_distance =
             *distances.min_by(|a, b| PartialOrd::partial_cmp(a, b).unwrap_or(Ordering::Greater));
-        if env.is_source { 0.0 } else { min_distance }
+        if env.is_source() { 0.0 } else { min_distance }
     })
 }
 
@@ -91,10 +90,7 @@ fn gradient(
 async fn gradient_task(node: Node, network: ZenohNetwork<Serializer>) {
     log::warn!("Gradient task started");
 
-    let env = GradientEnv {
-        node,
-        is_source: node.is_source(),
-    };
+    let env = GradientEnv { node };
     let mut engine = Engine::new(network, env, Serializer {}, gradient);
     loop {
         match engine.cycle() {
